@@ -1,20 +1,23 @@
 import csv
 import io
-import mysql.connector
-from flask import Blueprint, request, jsonify, render_template, redirect, url_for, send_file, current_app
-from db import get_db_connection  # 相对路径导入
-from auth import role_required  # 导入权限控制装饰器
+import datetime
+from flask import (
+    Blueprint, request, jsonify, render_template, redirect,
+    url_for, send_file, current_app, abort
+)
+from db import get_db_connection
+from auth import role_required
+
 purchases_bp = Blueprint('purchases', __name__)
 
-
-# 只允许 Admin 和 Warehouse 角色访问主表管理页面
+# Main management page, accessible by Admin and Warehouse roles
 @purchases_bp.route('/main_management')
 @role_required(['Admin', 'Warehouse'])
 def main_management():
     return render_template('main_management.html')
 
 
-# 只允许 Admin 和 Warehouse 角色访问明细管理页面
+# Detail management page, accessible by Admin and Warehouse roles
 @purchases_bp.route('/detail_management')
 @role_required(['Admin', 'Warehouse'])
 def detail_management():
@@ -22,37 +25,71 @@ def detail_management():
 
 
 @purchases_bp.route('/add_purchase_main', methods=['POST'])
-@role_required(['Admin', 'Warehouse'])  # 限制添加采购主表的操作
+@role_required(['Admin', 'Warehouse'])
 def add_purchase_main():
-    Eid = request.form['Eid']
-    Pcount = int(request.form['Pcount'])
-    Ptotal = float(request.form['Ptotal'])
-    Pdate = request.form['Pdate']
-    other = request.form['other']
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No input data provided'}), 400
+
+    Eid = data.get('Eid')
+    other = data.get('other', '')
+    Pcount = 0  # Initial value
+    Ptotal = 0.0  # Initial value
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Check if employee exists
-    cursor.execute('SELECT * FROM tb_employee WHERE Eid=%s', (Eid,))
-    employee = cursor.fetchone()
-    if not employee:
-        conn.close()
-        return '员工编号不存在，请使用有效的编号'
+    try:
+        # Check if employee exists
+        cursor.execute('SELECT * FROM tb_employee WHERE Eid=%s', (Eid,))
+        employee = cursor.fetchone()
+        if not employee:
+            return jsonify({'error': 'Employee ID does not exist'}), 400
 
-    cursor.execute(
-        'INSERT INTO tb_pay_main (Eid, Pcount, Ptotal, Pdate, other) VALUES (%s, %s, %s, %s, %s)',
-        (Eid, Pcount, Ptotal, Pdate, other))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('purchases.main_management'))
+        # Generate new Pid
+        cursor.execute('SELECT MAX(Pid) FROM tb_pay_main')
+        max_pid = cursor.fetchone()[0]
+        new_pid = (max_pid or 0) + 1
+
+        # Get latest Pdate and add one day
+        cursor.execute('SELECT MAX(Pdate) FROM tb_pay_main')
+        max_pdate = cursor.fetchone()[0]
+        if max_pdate:
+            latest_date = datetime.datetime.strptime(max_pdate, '%Y-%m-%d').date()
+            new_pdate = latest_date + datetime.timedelta(days=1)
+        else:
+            new_pdate = datetime.date.today()
+        Pdate = new_pdate.strftime('%Y-%m-%d')
+
+        # Insert the new record
+        cursor.execute(
+            'INSERT INTO tb_pay_main (Pid, Eid, Pcount, Ptotal, Pdate, other) '
+            'VALUES (%s, %s, %s, %s, %s, %s)',
+            (new_pid, Eid, Pcount, Ptotal, Pdate, other)
+        )
+        conn.commit()
+        return jsonify({'message': 'Purchase main record added successfully', 'Pid': new_pid}), 201
+    except Exception as e:
+        current_app.logger.error(f'Error adding purchase main: {e}')
+        conn.rollback()
+        return jsonify({'error': 'Failed to add purchase main record'}), 500
+    finally:
+        conn.close()
 
 
 @purchases_bp.route('/get_purchases_main', methods=['GET'])
+@role_required(['Admin', 'Warehouse'])
 def get_purchases_main():
+    page = int(request.args.get('page', 1))
+    page_size = int(request.args.get('pageSize', 50))
+    offset = (page - 1) * page_size
+
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM tb_pay_main')
+    cursor.execute(
+        'SELECT * FROM tb_pay_main ORDER BY Pid LIMIT %s OFFSET %s',
+        (page_size, offset)
+    )
     purchases_main = cursor.fetchall()
     conn.close()
 
@@ -68,12 +105,12 @@ def get_purchases_main():
     return jsonify(purchases_main_list)
 
 
-
 @purchases_bp.route('/get_purchase_main', methods=['GET'])
+@role_required(['Admin', 'Warehouse'])
 def get_purchase_main():
     Pid = request.args.get('Pid')
     if not Pid:
-        return '缺少采购单号参数', 400
+        return jsonify({'error': 'Missing Pid parameter'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -82,7 +119,7 @@ def get_purchase_main():
     conn.close()
 
     if not purchase_main:
-        return '采购主表不存在', 404
+        return jsonify({'error': 'Purchase main record not found'}), 404
 
     purchase_main_dict = {
         'Pid': purchase_main[0],
@@ -96,97 +133,142 @@ def get_purchase_main():
     return jsonify(purchase_main_dict)
 
 
-
-@purchases_bp.route('/update_purchase_main', methods=['POST'])
+@purchases_bp.route('/update_purchase_main', methods=['PUT'])
+@role_required(['Admin', 'Warehouse'])
 def update_purchase_main():
-    Pid = int(request.form['Pid'])
-    Eid = request.form['Eid']
-    Pcount = int(request.form['Pcount'])
-    Ptotal = float(request.form['Ptotal'])
-    Pdate = request.form['Pdate']
-    other = request.form['other']
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No input data provided'}), 400
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    Pid = data.get('Pid')
+    Eid = data.get('Eid')
+    Pdate = data.get('Pdate')
+    other = data.get('other', '')
 
-    # Check if employee exists
-    cursor.execute('SELECT * FROM tb_employee WHERE Eid=%s', (Eid,))
-    employee = cursor.fetchone()
-    if not employee:
-        conn.close()
-        return '员工编号不存在，请使用有效的编号'
-
-    cursor.execute(
-        'UPDATE tb_pay_main SET Eid=%s, Pcount=%s, Ptotal=%s, Pdate=%s, other=%s WHERE Pid=%s',
-        (Eid, Pcount, Ptotal, Pdate, other, Pid))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('purchases.main_management'))
-
-
-@purchases_bp.route('/delete_purchase_main', methods=['POST'])
-def delete_purchase_main():
-    Pid = int(request.form['Pid'])
+    if not Pid or not Eid or not Pdate:
+        return jsonify({'error': 'Missing required fields'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
-        # Delete related rows in tb_pay_detail
-        cursor.execute('DELETE FROM tb_pay_detail WHERE Pid=%s', (Pid,))
+        # Check if employee exists
+        cursor.execute('SELECT * FROM tb_employee WHERE Eid=%s', (Eid,))
+        employee = cursor.fetchone()
+        if not employee:
+            return jsonify({'error': 'Employee ID does not exist'}), 400
 
-        # Delete the purchase main record
-        cursor.execute('DELETE FROM tb_pay_main WHERE Pid=%s', (Pid,))
+        # Update only editable fields
+        cursor.execute(
+            'UPDATE tb_pay_main SET Eid=%s, Pdate=%s, other=%s WHERE Pid=%s',
+            (Eid, Pdate, other, Pid)
+        )
         conn.commit()
-        return '采购主表删除成功'
-    except mysql.connector.Error as err:
+        return jsonify({'message': 'Purchase main record updated successfully'}), 200
+    except Exception as e:
+        current_app.logger.error(f'Error updating purchase main: {e}')
         conn.rollback()
-        current_app.logger.error(f'删除失败: {err}')
-        return f'删除失败: {err}'
+        return jsonify({'error': 'Failed to update purchase main record'}), 500
     finally:
         conn.close()
 
 
+@purchases_bp.route('/delete_purchase_main', methods=['DELETE'])
+@role_required(['Admin', 'Warehouse'])
+def delete_purchase_main():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No input data provided'}), 400
 
-@purchases_bp.route('/add_purchase_detail', methods=['POST'])
-def add_purchase_detail():
-    Pid = int(request.form['Pid'])
-    Gid = request.form['Gid']
-    Pcount = int(request.form['Pcount'])
-    GPay = float(request.form['GPay'])
-    total = float(request.form['total'])
-    other = request.form['other']
+    Pid = data.get('Pid')
+
+    if not Pid:
+        return jsonify({'error': 'Missing Pid parameter'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Check if purchase main exists
-    cursor.execute('SELECT * FROM tb_pay_main WHERE Pid=%s', (Pid,))
-    purchase_main = cursor.fetchone()
-    if not purchase_main:
+    try:
+        # Delete the purchase main record and cascade delete related details
+        cursor.execute('DELETE FROM tb_pay_main WHERE Pid=%s', (Pid,))
+        conn.commit()
+        return jsonify({'message': 'Purchase main record deleted successfully'}), 200
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error(f'Error deleting purchase main: {e}')
+        return jsonify({'error': 'Failed to delete purchase main record'}), 500
+    finally:
         conn.close()
-        return '采购清单号不存在，请使用有效的编号'
 
-    # Check if good exists
-    cursor.execute('SELECT * FROM tb_good WHERE Gid=%s', (Gid,))
-    good = cursor.fetchone()
-    if not good:
+
+@purchases_bp.route('/add_purchase_detail', methods=['POST'])
+@role_required(['Admin', 'Warehouse'])
+def add_purchase_detail():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No input data provided'}), 400
+
+    Pid = data.get('Pid')
+    Gid = data.get('Gid')
+    Pcount = data.get('Pcount')
+    other = data.get('other', '')
+
+    if not Pid or not Gid or not Pcount:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Check if purchase main exists
+        cursor.execute('SELECT * FROM tb_pay_main WHERE Pid=%s', (Pid,))
+        purchase_main = cursor.fetchone()
+        if not purchase_main:
+            return jsonify({'error': 'Purchase main record does not exist'}), 400
+
+        # Check if good exists and get GPay
+        cursor.execute('SELECT GPay FROM tb_good WHERE Gid=%s', (Gid,))
+        good = cursor.fetchone()
+        if not good:
+            return jsonify({'error': 'Good ID does not exist'}), 400
+        GPay = good[0]
+
+        total = Pcount * GPay
+
+        # Generate new PDid
+        cursor.execute('SELECT MAX(PDid) FROM tb_pay_detail')
+        max_pdid = cursor.fetchone()[0]
+        new_pdid = (max_pdid or 0) + 1
+
+        # Insert the new detail record
+        cursor.execute(
+            'INSERT INTO tb_pay_detail (PDid, Pid, Gid, Pcount, GPay, total, other) '
+            'VALUES (%s, %s, %s, %s, %s, %s, %s)',
+            (new_pdid, Pid, Gid, Pcount, GPay, total, other)
+        )
+        conn.commit()
+        return jsonify({'message': 'Purchase detail record added successfully', 'PDid': new_pdid}), 201
+    except Exception as e:
+        current_app.logger.error(f'Error adding purchase detail: {e}')
+        conn.rollback()
+        return jsonify({'error': 'Failed to add purchase detail record'}), 500
+    finally:
         conn.close()
-        return '商品编号不存在，请使用有效的编号'
-
-    cursor.execute(
-        'INSERT INTO tb_pay_detail (Pid, Gid, Pcount, GPay, total, other) VALUES (%s, %s, %s, %s, %s, %s)',
-        (Pid, Gid, Pcount, GPay, total, other))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('purchases.detail_management'))
 
 
 @purchases_bp.route('/get_purchases_detail', methods=['GET'])
+@role_required(['Admin', 'Warehouse'])
 def get_purchases_detail():
+    page = int(request.args.get('page', 1))
+    page_size = int(request.args.get('pageSize', 50))
+    offset = (page - 1) * page_size
+
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM tb_pay_detail')
+    cursor.execute(
+        'SELECT * FROM tb_pay_detail ORDER BY PDid LIMIT %s OFFSET %s',
+        (page_size, offset)
+    )
     purchases_detail = cursor.fetchall()
     conn.close()
 
@@ -203,12 +285,12 @@ def get_purchases_detail():
     return jsonify(purchases_detail_list)
 
 
-
 @purchases_bp.route('/get_purchase_detail', methods=['GET'])
+@role_required(['Admin', 'Warehouse'])
 def get_purchase_detail():
-    PDid = int(request.args.get('PDid'))
+    PDid = request.args.get('PDid')
     if not PDid:
-        return '缺少采购明细号参数', 400
+        return jsonify({'error': 'Missing PDid parameter'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -217,7 +299,7 @@ def get_purchase_detail():
     conn.close()
 
     if not purchase_detail:
-        return '采购明细不存在', 404
+        return jsonify({'error': 'Purchase detail record not found'}), 404
 
     purchase_detail_dict = {
         'PDid': purchase_detail[0],
@@ -232,55 +314,81 @@ def get_purchase_detail():
     return jsonify(purchase_detail_dict)
 
 
-
-@purchases_bp.route('/update_purchase_detail', methods=['POST'])
+@purchases_bp.route('/update_purchase_detail', methods=['PUT'])
+@role_required(['Admin', 'Warehouse'])
 def update_purchase_detail():
-    PDid = int(request.form['PDid'])
-    Pid = int(request.form['Pid'])
-    Gid = request.form['Gid']
-    Pcount = int(request.form['Pcount'])
-    GPay = float(request.form['GPay'])
-    total = float(request.form['total'])
-    other = request.form['other']
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No input data provided'}), 400
+
+    PDid = data.get('PDid')
+    Pcount = data.get('Pcount')
+    other = data.get('other', '')
+
+    if not PDid or not Pcount:
+        return jsonify({'error': 'Missing required fields'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Check if purchase main exists
-    cursor.execute('SELECT * FROM tb_pay_main WHERE Pid=%s', (Pid,))
-    purchase_main = cursor.fetchone()
-    if not purchase_main:
+    try:
+        # Fetch existing record
+        cursor.execute('SELECT Pid, Gid FROM tb_pay_detail WHERE PDid=%s', (PDid,))
+        detail = cursor.fetchone()
+        if not detail:
+            return jsonify({'error': 'Purchase detail record does not exist'}), 400
+
+        Pid, Gid = detail
+
+        # Get GPay from tb_good
+        cursor.execute('SELECT GPay FROM tb_good WHERE Gid=%s', (Gid,))
+        good = cursor.fetchone()
+        GPay = good[0]
+
+        total = Pcount * GPay
+
+        # Update the detail record
+        cursor.execute(
+            'UPDATE tb_pay_detail SET Pcount=%s, GPay=%s, total=%s, other=%s WHERE PDid=%s',
+            (Pcount, GPay, total, other, PDid)
+        )
+        conn.commit()
+        return jsonify({'message': 'Purchase detail record updated successfully'}), 200
+    except Exception as e:
+        current_app.logger.error(f'Error updating purchase detail: {e}')
+        conn.rollback()
+        return jsonify({'error': 'Failed to update purchase detail record'}), 500
+    finally:
         conn.close()
-        return '采购清单号不存在，请使用有效的编号'
-
-    # Check if good exists
-    cursor.execute('SELECT * FROM tb_good WHERE Gid=%s', (Gid,))
-    good = cursor.fetchone()
-    if not good:
-        conn.close()
-        return '商品编号不存在，请使用有效的编号'
-
-    cursor.execute(
-        'UPDATE tb_pay_detail SET Pid=%s, Gid=%s, Pcount=%s, GPay=%s, total=%s, other=%s WHERE PDid=%s',
-        (Pid, Gid, Pcount, GPay, total, other, PDid))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('purchases.detail_management'))
 
 
-@purchases_bp.route('/delete_purchase_detail', methods=['POST'])
+@purchases_bp.route('/delete_purchase_detail', methods=['DELETE'])
+@role_required(['Admin', 'Warehouse'])
 def delete_purchase_detail():
-    PDid = int(request.form['PDid'])
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No input data provided'}), 400
+
+    PDid = data.get('PDid')
+    if not PDid:
+        return jsonify({'error': 'Missing PDid parameter'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM tb_pay_detail WHERE PDid=%s', (PDid,))
-    conn.commit()
-    conn.close()
-    return '采购明细删除成功'
+    try:
+        cursor.execute('DELETE FROM tb_pay_detail WHERE PDid=%s', (PDid,))
+        conn.commit()
+        return jsonify({'message': 'Purchase detail record deleted successfully'}), 200
+    except Exception as e:
+        conn.rollback()
+        current_app.logger.error(f'Error deleting purchase detail: {e}')
+        return jsonify({'error': 'Failed to delete purchase detail record'}), 500
+    finally:
+        conn.close()
 
 
 @purchases_bp.route('/export_purchases', methods=['GET'])
+@role_required(['Admin', 'Warehouse'])
 def export_purchases():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -305,11 +413,16 @@ def export_purchases():
     output.seek(0)
     encoded_output = io.BytesIO(output.getvalue().encode('utf-8'))
 
-    return send_file(encoded_output, mimetype='text/csv', download_name='purchases.csv', as_attachment=True)
-
+    return send_file(
+        encoded_output,
+        mimetype='text/csv',
+        download_name='purchases.csv',
+        as_attachment=True
+    )
 
 
 @purchases_bp.route('/search_purchases_main', methods=['GET'])
+@role_required(['Admin', 'Warehouse'])
 def search_purchases_main():
     eid = request.args.get('eid', '').lower()
     pdate = request.args.get('pdate', '').lower()
@@ -336,6 +449,7 @@ def search_purchases_main():
 
 
 @purchases_bp.route('/search_purchases_detail', methods=['GET'])
+@role_required(['Admin', 'Warehouse'])
 def search_purchases_detail():
     pid = request.args.get('pid', '').lower()
     gid = request.args.get('gid', '').lower()
@@ -360,3 +474,50 @@ def search_purchases_detail():
     } for detail in purchases_detail]
 
     return jsonify(purchases_detail_list)
+
+
+@purchases_bp.route('/get_goods', methods=['GET'])
+@role_required(['Admin', 'Warehouse'])
+def get_goods():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT Gid FROM tb_good')
+    goods = cursor.fetchall()
+    conn.close()
+    goods_list = [{'Gid': good[0]} for good in goods]
+    return jsonify(goods_list)
+
+
+@purchases_bp.route('/get_good_price', methods=['GET'])
+@role_required(['Admin', 'Warehouse'])
+def get_good_price():
+    Gid = request.args.get('Gid')
+    if not Gid:
+        return jsonify({'error': 'Missing Gid parameter'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT GPay FROM tb_good WHERE Gid=%s', (Gid,))
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        return jsonify({'GPay': result[0]})
+    else:
+        return jsonify({'error': 'Good not found'}), 404
+
+
+@purchases_bp.route('/get_latest_pdate', methods=['GET'])
+@role_required(['Admin', 'Warehouse'])
+def get_latest_pdate():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT MAX(Pdate) FROM tb_pay_main')
+    max_pdate = cursor.fetchone()[0]
+    if max_pdate:
+        latest_date = datetime.datetime.strptime(max_pdate, '%Y-%m-%d').date()
+        new_pdate = (latest_date + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+    else:
+        new_pdate = datetime.date.today().strftime('%Y-%m-%d')
+    conn.close()
+    return jsonify({'new_pdate': new_pdate})
