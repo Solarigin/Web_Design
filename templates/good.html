@@ -18,6 +18,8 @@
         }
     </style>
     <script>
+        // 全部 JavaScript 代码整合在一起
+
         // Toggle Sidebar
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
@@ -30,18 +32,18 @@
             submenu.classList.toggle('hidden');
         }
 
-        // Open Modal
-        function openModal() {
-            document.getElementById('goodModal').classList.add('modal-active');
-            // Reset the form
-            document.getElementById('goodModalForm').reset();
-            // Set form action to add good
-            document.getElementById('goodModalForm').action = '/add_good';
-        }
-
         // Close Modal
         function closeModal() {
             document.getElementById('goodModal').classList.remove('modal-active');
+        }
+
+        // Debounce function for search
+        function debounce(func, delay) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
         }
 
         // Load Goods
@@ -64,7 +66,7 @@
                         <td class="px-4 py-2 whitespace-nowrap">${good.other}</td>
                         <td class="px-4 py-2 whitespace-nowrap">
                             <div class="flex space-x-2">
-                                <button class="text-blue-500 hover:text-blue-700" onclick="editGood('${good.Gid}')">
+                                <button class="text-blue-500 hover:text-blue-700" onclick="openEditModal('${good.Gid}')">
                                     <i class="fas fa-edit"></i> 编辑
                                 </button>
                                 <button class="text-red-500 hover:text-red-700" onclick="deleteGood('${good.Gid}')">
@@ -77,29 +79,6 @@
                 });
             } catch (error) {
                 console.error('Error loading goods:', error);
-                alert('加载商品信息时出错，请稍后重试。');
-            }
-        }
-
-        // Edit Good
-        async function editGood(Gid) {
-            try {
-                const response = await fetch(`/get_good?Gid=${Gid}`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-                // Open the modal
-                openModal();
-                // Populate the form with existing data using object properties
-                document.getElementById('modalGid').value = data.Gid;
-                document.getElementById('modalGName').value = data.GName;
-                document.getElementById('modalGPay').value = data.GPay;
-                document.getElementById('modalCid').value = data.Cid;
-                document.getElementById('modalGIntroduction').value = data.GIntroduction;
-                document.getElementById('modalOther').value = data.other;
-                // Change form action to update good
-                document.getElementById('goodModalForm').action = '/update_good';
-            } catch (error) {
-                console.error('Error fetching good data:', error);
                 alert('加载商品信息时出错，请稍后重试。');
             }
         }
@@ -123,15 +102,6 @@
                 console.error('Error deleting good:', error);
                 alert('删除失败，请稍后重试。');
             }
-        }
-
-        // Debounce function for search
-        function debounce(func, delay) {
-            let timeout;
-            return function (...args) {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(this, args), delay);
-            };
         }
 
         // Search Goods
@@ -158,7 +128,7 @@
                         <td class="px-4 py-2 whitespace-nowrap">${good.other}</td>
                         <td class="px-4 py-2 whitespace-nowrap">
                             <div class="flex space-x-2">
-                                <button class="text-blue-500 hover:text-blue-700" onclick="editGood('${good.Gid}')">
+                                <button class="text-blue-500 hover:text-blue-700" onclick="openEditModal('${good.Gid}')">
                                     <i class="fas fa-edit"></i> 编辑
                                 </button>
                                 <button class="text-red-500 hover:text-red-700" onclick="deleteGood('${good.Gid}')">
@@ -209,37 +179,7 @@
             }
         }
 
-        // Load Goods on Page Load
-        window.onload = loadGoods;
-    </script>
-    <script>
-        // JavaScript 加载供应商编号
-        async function loadSuppliers() {
-            try {
-                const response = await fetch('/get_customers');
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-                const supplierSelect = document.getElementById('modalCid');
-                supplierSelect.innerHTML = '';  // 清空选择框
-                data.forEach(customer => {
-                    const option = document.createElement('option');
-                    option.value = customer.Cid;
-                    option.textContent = customer.Cid;
-                    supplierSelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error loading suppliers:', error);
-                alert('加载供应商时出错，请稍后重试。');
-            }
-        }
-
-        // 页面加载时调用
-        window.onload = function() {
-            loadGoods();
-            loadSuppliers();
-        };
-    </script>
-    <script>
+        // Load Next Good ID
         async function loadNextGoodId() {
             try {
                 const response = await fetch('/get_next_good_id');
@@ -252,7 +192,7 @@
             }
         }
 
-        // 获取供应商编号并填充下拉框
+        // Load Suppliers
         async function loadSuppliers() {
             try {
                 const response = await fetch('/get_customers');
@@ -272,15 +212,47 @@
             }
         }
 
-        // 在打开添加商品的模态框时调用
-        function openModal() {
+        // Open Modal for Adding Good
+        async function openAddModal() {
             document.getElementById('goodModal').classList.add('modal-active');
             document.getElementById('goodModalForm').reset();
-            loadNextGoodId();  // 调用函数加载商品编号
-            loadSuppliers();  // 调用函数加载供应商编号
+            await loadNextGoodId();  // 获取下一个商品编号
+            await loadSuppliers();   // 加载供应商编号
+            document.getElementById('goodModalForm').action = '/add_good';  // 设置表单提交路径
         }
-    </script>
 
+        // Open Modal for Editing Good
+        async function openEditModal(Gid) {
+            document.getElementById('goodModal').classList.add('modal-active');
+            document.getElementById('goodModalForm').reset();
+            await loadSuppliers();   // 加载供应商编号
+            document.getElementById('goodModalForm').action = '/update_good';  // 设置表单提交路径
+
+            // 获取现有商品数据并填充表单
+            try {
+                const response = await fetch(`/get_good?Gid=${Gid}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+
+                document.getElementById('modalGid').value = data.Gid;  // 使用现有商品编号
+                document.getElementById('modalGName').value = data.GName;
+                document.getElementById('modalGPay').value = data.GPay;
+                document.getElementById('modalCid').value = data.Cid;
+                document.getElementById('modalGIntroduction').value = data.GIntroduction;
+                document.getElementById('modalOther').value = data.other;
+
+            } catch (error) {
+                console.error('Error loading good data:', error);
+                alert('加载商品数据时出错，请稍后重试。');
+            }
+        }
+
+        // Load Goods on Page Load
+        window.onload = function() {
+            loadGoods();
+            // 不需要在页面加载时调用 loadSuppliers，因为在打开模态框时会调用
+        };
+    </script>
 </head>
 <body class="flex h-screen overflow-hidden">
     <!-- User Info Display -->
@@ -371,7 +343,7 @@
                     <!-- 操作按钮 -->
                     <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto mt-4 md:mt-0">
                         <!-- 添加商品按钮 -->
-                        <button onclick="openModal()" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                        <button onclick="openAddModal()" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700">
                             添加商品
                         </button>
                         <!-- 导出CSV按钮 -->
@@ -418,7 +390,7 @@
                     <form id="goodModalForm" onsubmit="submitGoodForm(event)" class="mt-5">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <!-- 商品编号 (自动生成，并显示) -->
+                                <!-- 商品编号 -->
                                 <label for="modalGid" class="block text-sm font-medium text-gray-700">商品编号</label>
                                 <input type="text" id="modalGid" name="Gid" readonly class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
                             </div>
@@ -433,10 +405,11 @@
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
                             <div>
-                                <label for="modalCid" class="block text-sm font-medium text-gray-700">供应商编号</label>
-                                <select id="modalCid" name="Cid" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                                    <!-- 供应商编号将通过 JavaScript 填充 -->
-                                </select>
+                            <!-- 供应商编号选择框 -->
+                            <label for="modalCid" class="block text-sm font-medium text-gray-700">供应商编号</label>
+                            <select id="modalCid" name="Cid" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+                                <!-- JavaScript 将填充这里的选项 -->
+                            </select>
                             </div>
                             <div class="md:col-span-2">
                                 <label for="modalGIntroduction" class="block text-sm font-medium text-gray-700">简介:</label>
