@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>商品管理</title>
+    <!-- Include Tailwind CSS and Font Awesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Custom Styles -->
+    <style>
+        /* Modal styles */
+        .modal {
+            display: none;
+        }
+        .modal-active {
+            display: block;
+        }
+    </style>
+    <script>
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        // Toggle Submenu
+        function toggleSubmenu() {
+            const submenu = document.getElementById('submenu');
+            submenu.classList.toggle('hidden');
+        }
+
+        // Open Modal
+        function openModal() {
+            document.getElementById('goodModal').classList.add('modal-active');
+            // Reset the form
+            document.getElementById('goodModalForm').reset();
+            // Set form action to add good
+            document.getElementById('goodModalForm').action = '/add_good';
+        }
+
+        // Close Modal
+        function closeModal() {
+            document.getElementById('goodModal').classList.remove('modal-active');
+        }
+
+        // Load Goods
+        async function loadGoods() {
+            try {
+                const response = await fetch('/get_goods');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                const tableBody = document.getElementById('goodTable');
+                tableBody.innerHTML = '';
+                data.forEach(good => {
+                    const row = document.createElement('tr');
+                    row.classList.add('odd:bg-white', 'even:bg-gray-50');
+                    row.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap">${good.Gid}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${good.GName}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${good.GPay}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${good.Cid}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${good.GIntroduction}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${good.other}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">
+                            <div class="flex space-x-2">
+                                <button class="text-blue-500 hover:text-blue-700" onclick="editGood('${good.Gid}')">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
+                                <button class="text-red-500 hover:text-red-700" onclick="deleteGood('${good.Gid}')">
+                                    <i class="fas fa-trash-alt"></i> 删除
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading goods:', error);
+                alert('加载商品信息时出错，请稍后重试。');
+            }
+        }
+
+        // Edit Good
+        async function editGood(Gid) {
+            try {
+                const response = await fetch(`/get_good?Gid=${Gid}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                // Open the modal
+                openModal();
+                // Populate the form with existing data using object properties
+                document.getElementById('modalGid').value = data.Gid;
+                document.getElementById('modalGName').value = data.GName;
+                document.getElementById('modalGPay').value = data.GPay;
+                document.getElementById('modalCid').value = data.Cid;
+                document.getElementById('modalGIntroduction').value = data.GIntroduction;
+                document.getElementById('modalOther').value = data.other;
+                // Change form action to update good
+                document.getElementById('goodModalForm').action = '/update_good';
+            } catch (error) {
+                console.error('Error fetching good data:', error);
+                alert('加载商品信息时出错，请稍后重试。');
+            }
+        }
+
+        // Delete Good
+        async function deleteGood(Gid) {
+            if (!confirm('确定要删除此商品吗？')) return;
+            try {
+                const response = await fetch('/delete_good', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `Gid=${encodeURIComponent(Gid)}`
+                });
+                if (!response.ok) throw new Error('Network response was not ok');
+                const text = await response.text();
+                alert(text);
+                loadGoods();
+            } catch (error) {
+                console.error('Error deleting good:', error);
+                alert('删除失败，请稍后重试。');
+            }
+        }
+
+        // Debounce function for search
+        function debounce(func, delay) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // Search Goods
+        const searchGoods = debounce(async function () {
+            const searchName = document.getElementById('searchName').value.toLowerCase();
+            const searchPrice = document.getElementById('searchPrice').value.toLowerCase();
+            const searchSupplierId = document.getElementById('searchSupplierId').value.toLowerCase();
+
+            try {
+                const response = await fetch(`/search_goods?name=${encodeURIComponent(searchName)}&price=${encodeURIComponent(searchPrice)}&supplier_id=${encodeURIComponent(searchSupplierId)}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                const tableBody = document.getElementById('goodTable');
+                tableBody.innerHTML = '';
+                data.forEach(good => {
+                    const row = document.createElement('tr');
+                    row.classList.add('odd:bg-white', 'even:bg-gray-50');
+                    row.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap">${good.Gid}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${good.GName}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${good.GPay}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${good.Cid}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${good.GIntroduction}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${good.other}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">
+                            <div class="flex space-x-2">
+                                <button class="text-blue-500 hover:text-blue-700" onclick="editGood('${good.Gid}')">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
+                                <button class="text-red-500 hover:text-red-700" onclick="deleteGood('${good.Gid}')">
+                                    <i class="fas fa-trash-alt"></i> 删除
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error searching goods:', error);
+                alert('搜索时出错，请稍后重试。');
+            }
+        }, 500);
+
+        // Export CSV
+        function exportCsv() {
+            const searchName = document.getElementById('searchName').value.toLowerCase();
+            const searchPrice = document.getElementById('searchPrice').value.toLowerCase();
+            const searchSupplierId = document.getElementById('searchSupplierId').value.toLowerCase();
+            const url = `/export_goods?name=${encodeURIComponent(searchName)}&price=${encodeURIComponent(searchPrice)}&supplier_id=${encodeURIComponent(searchSupplierId)}`;
+            window.location.href = url;
+        }
+
+        // Handle form submission
+        async function submitGoodForm(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const form = event.target;
+            const formData = new FormData(form);
+            const actionUrl = form.action;
+            const method = 'POST';
+
+            try {
+                const response = await fetch(actionUrl, {
+                    method: method,
+                    body: new URLSearchParams(formData),
+                });
+                if (!response.ok) throw new Error('Network response was not ok');
+                const result = await response.text();
+                alert(result);
+                closeModal();
+                loadGoods(); // Refresh the goods list
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                alert('提交失败，请稍后重试。');
+            }
+        }
+
+        // Load Goods on Page Load
+        window.onload = loadGoods;
+    </script>
+    <script>
+        // JavaScript 加载供应商编号
+        async function loadSuppliers() {
+            try {
+                const response = await fetch('/get_customers');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                const supplierSelect = document.getElementById('modalCid');
+                supplierSelect.innerHTML = '';  // 清空选择框
+                data.forEach(customer => {
+                    const option = document.createElement('option');
+                    option.value = customer.Cid;
+                    option.textContent = customer.Cid;
+                    supplierSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading suppliers:', error);
+                alert('加载供应商时出错，请稍后重试。');
+            }
+        }
+
+        // 页面加载时调用
+        window.onload = function() {
+            loadGoods();
+            loadSuppliers();
+        };
+    </script>
+    <script>
+        async function loadNextGoodId() {
+            try {
+                const response = await fetch('/get_next_good_id');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                document.getElementById('modalGid').value = data.nextGid;  // 设置商品编号
+            } catch (error) {
+                console.error('Error loading next good ID:', error);
+                alert('无法加载商品编号，请稍后重试。');
+            }
+        }
+
+        // 获取供应商编号并填充下拉框
+        async function loadSuppliers() {
+            try {
+                const response = await fetch('/get_customers');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                const supplierSelect = document.getElementById('modalCid');
+                supplierSelect.innerHTML = '';  // 清空选择框
+                data.forEach(customer => {
+                    const option = document.createElement('option');
+                    option.value = customer.Cid;
+                    option.textContent = customer.Cid;
+                    supplierSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading suppliers:', error);
+                alert('加载供应商时出错，请稍后重试。');
+            }
+        }
+
+        // 在打开添加商品的模态框时调用
+        function openModal() {
+            document.getElementById('goodModal').classList.add('modal-active');
+            document.getElementById('goodModalForm').reset();
+            loadNextGoodId();  // 调用函数加载商品编号
+            loadSuppliers();  // 调用函数加载供应商编号
+        }
+    </script>
+
+</head>
+<body class="flex h-screen overflow-hidden">
+    <!-- User Info Display -->
+    <div id="user-info" class="fixed top-4 right-4 flex items-center space-x-2 bg-white p-2 rounded-lg shadow-lg">
+        <i id="user-icon" class="fas fa-user text-2xl"></i>
+        <span id="user-nickname" class="text-lg font-bold text-gray-700">User</span>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div id="toast" class="fixed top-0 right-0 mt-4 mr-4 bg-red-500 text-white p-3 rounded-lg shadow-lg hidden">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-gray-800 text-white p-4 w-64 transform transition-transform duration-300 ease-in-out h-full fixed top-0 left-0 z-30 -translate-x-full md:translate-x-0">
+        <h1 class="text-center text-2xl font-bold mb-8">导航栏</h1>
+        <nav>
+            <ul>
+                <li class="mb-4">
+                    <a href="/customer_management" class="flex items-center bg-green-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-users mr-2"></i>客户管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="/employee_management" class="flex items-center bg-blue-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-user-tie mr-2"></i>员工管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="/good_management" class="flex items-center bg-yellow-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-box-open mr-2"></i>商品管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <button onclick="toggleSubmenu()" class="w-full text-left flex items-center bg-red-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-shopping-cart mr-2"></i>采购管理
+                    </button>
+                    <ul id="submenu" class="hidden ml-4 mt-2">
+                        <li class="mb-2">
+                            <a href="/main_management" class="flex items-center bg-red-300 text-black p-2 rounded-full justify-center">
+                                <i class="fas fa-table mr-2"></i>主表管理
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/detail_management" class="flex items-center bg-red-300 text-black p-2 rounded-full justify-center">
+                                <i class="fas fa-list mr-2"></i>明细管理
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="mb-4">
+                    <a href="/statistics" class="flex items-center bg-purple-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-chart-bar mr-2"></i>统计查询
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main-content" class="flex-1 overflow-auto p-4 ml-0 md:ml-64 transition-all duration-300">
+        <button onclick="toggleSidebar()"
+            class="fixed top-4 left-4 text-white bg-blue-500 rounded-full p-3 z-40 md:hidden">☰</button>
+        <div class="container mx-auto">
+            <h2 class="text-2xl font-bold mb-4">商品管理</h2>
+            <!-- 动态搜索和操作按钮 -->
+            <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+                <div class="flex flex-wrap md:flex-nowrap items-end justify-start gap-4">
+                    <!-- 搜索字段 -->
+                    <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- 搜索字段内容 -->
+                        <div>
+                            <label for="searchName" class="block text-sm font-medium text-gray-700">搜索商品名称：</label>
+                            <input type="text" id="searchName" onkeyup="searchGoods()" placeholder="输入商品名称"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="searchPrice" class="block text-sm font-medium text-gray-700">搜索商品单价：</label>
+                            <input type="text" id="searchPrice" onkeyup="searchGoods()" placeholder="输入商品单价"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="searchSupplierId" class="block text-sm font-medium text-gray-700">搜索供应商编号：</label>
+                            <input type="text" id="searchSupplierId" onkeyup="searchGoods()" placeholder="输入供应商编号"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+                    <!-- 操作按钮 -->
+                    <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto mt-4 md:mt-0">
+                        <!-- 添加商品按钮 -->
+                        <button onclick="openModal()" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                            添加商品
+                        </button>
+                        <!-- 导出CSV按钮 -->
+                        <button type="button" onclick="exportCsv()" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                            导出CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- 商品表格 -->
+            <div class="bg-white p-4 rounded-lg shadow-md overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">商品编号</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">商品名称</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">单价</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">供应商编号</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">简介</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">备注</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="goodTable" class="bg-white divide-y divide-gray-200">
+                        <!-- 商品信息行将由JS动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="goodModal" class="modal fixed z-50 inset-0 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="modal-content bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">添加/编辑商品</h3>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-500">
+                            <span class="sr-only">关闭</span>
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="goodModalForm" onsubmit="submitGoodForm(event)" class="mt-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <!-- 商品编号 (自动生成，并显示) -->
+                                <label for="modalGid" class="block text-sm font-medium text-gray-700">商品编号</label>
+                                <input type="text" id="modalGid" name="Gid" readonly class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+                            </div>
+                            <div>
+                                <label for="modalGName" class="block text-sm font-medium text-gray-700">商品名称:</label>
+                                <input type="text" id="modalGName" name="GName" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="modalGPay" class="block text-sm font-medium text-gray-700">商品单价:</label>
+                                <input type="number" id="modalGPay" name="GPay" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="modalCid" class="block text-sm font-medium text-gray-700">供应商编号</label>
+                                <select id="modalCid" name="Cid" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+                                    <!-- 供应商编号将通过 JavaScript 填充 -->
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="modalGIntroduction" class="block text-sm font-medium text-gray-700">简介:</label>
+                                <textarea id="modalGIntroduction" name="GIntroduction"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="modalOther" class="block text-sm font-medium text-gray-700">备注:</label>
+                                <textarea id="modalOther" name="other"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                            </div>
+                        </div>
+                        <div class="mt-5 sm:mt-6 flex justify-end space-x-4">
+                            <button type="button" onclick="closeModal()" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-700">
+                                取消
+                            </button>
+                            <input type="submit" value="提交商品" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

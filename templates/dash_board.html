@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>新主页</title>
+    <!-- Include Tailwind CSS and Font Awesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Custom Styles -->
+    <style>
+        .sidebar {
+            transition: transform 0.3s ease;
+        }
+        .sidebar-hidden {
+            transform: translateX(-100%);
+        }
+        .main-content {
+            transition: margin-left 0.3s ease;
+        }
+        .main-content-expanded {
+            margin-left: 0;
+        }
+        .main-content-collapsed {
+            margin-left: 25%;
+        }
+        .submenu {
+            display: none;
+            transition: max-height 0.3s ease;
+        }
+        .submenu-expanded {
+            display: block;
+        }
+    </style>
+    <script>
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            sidebar.classList.toggle('sidebar-hidden');
+            mainContent.classList.toggle('main-content-expanded');
+            mainContent.classList.toggle('main-content-collapsed');
+        }
+
+        // Toggle Submenu
+        function toggleSubmenu() {
+            const submenu = document.getElementById('submenu');
+            submenu.classList.toggle('submenu-expanded');
+        }
+
+        // Function to show toast message
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden');
+
+            // Automatically hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Check for flash messages from the server
+        document.addEventListener('DOMContentLoaded', function () {
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        if ('{{ category }}' === 'error') {
+                            showToast('{{ message }}');
+                        }
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        });
+    </script>
+</head>
+<body class="flex h-screen overflow-hidden">
+    <!-- User Info Display -->
+    <div id="user-info" class="fixed top-4 right-4 flex items-center space-x-2 bg-white p-2 rounded-lg shadow-lg">
+        <i id="user-icon" class="fas fa-user text-2xl"></i>
+        <span id="user-nickname" class="text-lg font-bold text-gray-700">User</span>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div id="toast" class="fixed top-0 right-0 mt-4 mr-4 bg-red-500 text-white p-3 rounded-lg shadow-lg hidden">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-gray-800 text-white p-4 w-64 transform transition-transform duration-300 ease-in-out h-full fixed top-0 left-0 z-30 -translate-x-full md:translate-x-0">
+        <h1 class="text-center text-2xl font-bold mb-8">导航栏</h1>
+        <nav>
+            <ul>
+                <li class="mb-4">
+                    <a href="/customer_management" class="flex items-center bg-green-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-users mr-2"></i>客户管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="/employee_management" class="flex items-center bg-blue-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-user-tie mr-2"></i>员工管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="/good_management" class="flex items-center bg-yellow-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-box-open mr-2"></i>商品管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <button onclick="toggleSubmenu()" class="w-full text-left flex items-center bg-red-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-shopping-cart mr-2"></i>采购管理
+                    </button>
+                    <ul id="submenu" class="submenu ml-4 mt-2">
+                        <li class="mb-2">
+                            <a href="/main_management" class="flex items-center bg-red-300 text-black p-2 rounded-full justify-center">
+                                <i class="fas fa-table mr-2"></i>主表管理
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/detail_management" class="flex items-center bg-red-300 text-black p-2 rounded-full justify-center">
+                                <i class="fas fa-list mr-2"></i>明细管理
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="mb-4">
+                    <a href="/statistics" class="flex items-center bg-purple-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-chart-bar mr-2"></i>统计查询
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main-content" class="main-content main-content-collapsed flex-1 flex items-center justify-center relative">
+        <button onclick="toggleSidebar()" class="fixed top-4 left-4 text-white bg-blue-500 rounded-full p-3 z-10">☰</button>
+        <p class="text-xl">请在左侧导航栏选择您想进行的操作</p>
+    </main>
+</body>
+</html>

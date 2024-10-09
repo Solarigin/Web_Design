@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>客户管理</title>
+    <!-- Include Tailwind CSS and Font Awesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Custom Styles -->
+    <style>
+        /* Modal styles */
+        .modal {
+            display: none;
+        }
+        .modal-active {
+            display: block;
+        }
+    </style>
+    <script>
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        // Toggle Submenu
+        function toggleSubmenu() {
+            const submenu = document.getElementById('submenu');
+            submenu.classList.toggle('hidden');
+        }
+
+        // Open Modal
+        function openModal() {
+            document.getElementById('customerModal').classList.add('modal-active');
+            // Reset the form
+            document.getElementById('customerModalForm').reset();
+            // Set form action to add customer
+            document.getElementById('customerModalForm').action = '/add_customer';
+        }
+
+        // Close Modal
+        function closeModal() {
+            document.getElementById('customerModal').classList.remove('modal-active');
+        }
+
+        // Load Customers
+        async function loadCustomers() {
+            try {
+                const response = await fetch('/get_customers');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                const tableBody = document.getElementById('customerTable');
+                tableBody.innerHTML = '';
+                data.forEach(customer => {
+                    const row = document.createElement('tr');
+                    row.classList.add('odd:bg-white', 'even:bg-gray-50');
+                    row.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.Cid}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.CcompanyName}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.CcompanySName}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.CcompanyAddress}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.CcompanyPhone}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.Cemail}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.Cname}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.CtelPhone}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.other}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">
+                            <div class="flex space-x-2">
+                                <button class="text-blue-500 hover:text-blue-700" onclick="editCustomer('${customer.Cid}')">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
+                                <button class="text-red-500 hover:text-red-700" onclick="deleteCustomer('${customer.Cid}')">
+                                    <i class="fas fa-trash-alt"></i> 删除
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading customers:', error);
+                alert('加载客户信息时出错，请稍后重试。');
+            }
+        }
+
+        // Edit Customer
+        async function editCustomer(Cid) {
+            try {
+                const response = await fetch(`/get_customer?Cid=${Cid}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                // Open the modal
+                openModal();
+                // Populate the form with existing data
+                document.getElementById('modalCid').value = data[0];
+                document.getElementById('modalCcompanyName').value = data[1];
+                document.getElementById('modalCcompanySName').value = data[2];
+                document.getElementById('modalCcompanyAddress').value = data[3];
+                document.getElementById('modalCcompanyPhone').value = data[4];
+                document.getElementById('modalCemail').value = data[5];
+                document.getElementById('modalCname').value = data[6];
+                document.getElementById('modalCtelPhone').value = data[7];
+                document.getElementById('modalOther').value = data[8];
+                // Change form action to update customer
+                document.getElementById('customerModalForm').action = '/update_customer';
+            } catch (error) {
+                console.error('Error fetching customer data:', error);
+                alert('加载客户信息时出错，请稍后重试。');
+            }
+        }
+
+        // Delete Customer
+        async function deleteCustomer(Cid) {
+            if (!confirm('确定要删除此客户吗？')) return;
+            try {
+                const response = await fetch('/delete_customer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `Cid=${encodeURIComponent(Cid)}`
+                });
+                if (!response.ok) throw new Error('Network response was not ok');
+                const text = await response.text();
+                alert(text);
+                loadCustomers();
+            } catch (error) {
+                console.error('Error deleting customer:', error);
+                alert('删除失败，请稍后重试。');
+            }
+        }
+
+        // Debounce function for search
+        function debounce(func, delay) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // Search Customers
+        const searchCustomers = debounce(async function () {
+            const searchName = document.getElementById('searchName').value.toLowerCase();
+            const searchAddress = document.getElementById('searchAddress').value.toLowerCase();
+            const searchContact = document.getElementById('searchContact').value.toLowerCase();
+
+            try {
+                const response = await fetch(`/search_customers?name=${encodeURIComponent(searchName)}&address=${encodeURIComponent(searchAddress)}&contact=${encodeURIComponent(searchContact)}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                const tableBody = document.getElementById('customerTable');
+                tableBody.innerHTML = '';
+                data.forEach(customer => {
+                    const row = document.createElement('tr');
+                    row.classList.add('odd:bg-white', 'even:bg-gray-50');
+                    row.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.Cid}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.CcompanyName}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.CcompanySName}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.CcompanyAddress}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.CcompanyPhone}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.Cemail}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.Cname}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.CtelPhone}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${customer.other}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">
+                            <div class="flex space-x-2">
+                                <button class="text-blue-500 hover:text-blue-700" onclick="editCustomer('${customer.Cid}')">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
+                                <button class="text-red-500 hover:text-red-700" onclick="deleteCustomer('${customer.Cid}')">
+                                    <i class="fas fa-trash-alt"></i> 删除
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error searching customers:', error);
+                alert('搜索时出错，请稍后重试。');
+            }
+        }, 500);
+
+        // Export CSV
+        function exportCsv() {
+            const searchName = document.getElementById('searchName').value.toLowerCase();
+            const searchAddress = document.getElementById('searchAddress').value.toLowerCase();
+            const searchContact = document.getElementById('searchContact').value.toLowerCase();
+            const url = `/export_customers?name=${encodeURIComponent(searchName)}&address=${encodeURIComponent(searchAddress)}&contact=${encodeURIComponent(searchContact)}`;
+            window.location.href = url;
+        }
+
+        // Load Customers on Page Load
+        window.onload = loadCustomers;
+    </script>
+</head>
+<body class="flex h-screen overflow-hidden">
+    <!-- User Info Display -->
+    <div id="user-info" class="fixed top-4 right-4 flex items-center space-x-2 bg-white p-2 rounded-lg shadow-lg">
+        <i id="user-icon" class="fas fa-user text-2xl"></i>
+        <span id="user-nickname" class="text-lg font-bold text-gray-700">User</span>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div id="toast" class="fixed top-0 right-0 mt-4 mr-4 bg-red-500 text-white p-3 rounded-lg shadow-lg hidden">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-gray-800 text-white p-4 w-64 transform transition-transform duration-300 ease-in-out h-full fixed top-0 left-0 z-30 -translate-x-full md:translate-x-0">
+        <h1 class="text-center text-2xl font-bold mb-8">导航栏</h1>
+        <nav>
+            <ul>
+                <li class="mb-4">
+                    <a href="/customer_management" class="flex items-center bg-green-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-users mr-2"></i>客户管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="/employee_management" class="flex items-center bg-blue-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-user-tie mr-2"></i>员工管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="/good_management" class="flex items-center bg-yellow-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-box-open mr-2"></i>商品管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <button onclick="toggleSubmenu()" class="w-full text-left flex items-center bg-red-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-shopping-cart mr-2"></i>采购管理
+                    </button>
+                    <ul id="submenu" class="hidden ml-4 mt-2">
+                        <li class="mb-2">
+                            <a href="/main_management" class="flex items-center bg-red-300 text-black p-2 rounded-full justify-center">
+                                <i class="fas fa-table mr-2"></i>主表管理
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/detail_management" class="flex items-center bg-red-300 text-black p-2 rounded-full justify-center">
+                                <i class="fas fa-list mr-2"></i>明细管理
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="mb-4">
+                    <a href="/statistics" class="flex items-center bg-purple-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-chart-bar mr-2"></i>统计查询
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main-content" class="flex-1 overflow-auto p-4 ml-0 md:ml-64 transition-all duration-300">
+        <button onclick="toggleSidebar()"
+            class="fixed top-4 left-4 text-white bg-blue-500 rounded-full p-3 z-40 md:hidden">☰</button>
+        <div class="container mx-auto">
+            <h2 class="text-2xl font-bold mb-4">客户管理</h2>
+            <!-- 动态搜索和操作按钮 -->
+            <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+                <div class="flex flex-wrap md:flex-nowrap items-end justify-start gap-4">
+                    <!-- 搜索字段 -->
+                    <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- 搜索字段内容 -->
+                        <div>
+                            <label for="searchName" class="block text-sm font-medium text-gray-700">搜索客户名称：</label>
+                            <input type="text" id="searchName" onkeyup="searchCustomers()" placeholder="输入客户名称"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="searchAddress" class="block text-sm font-medium text-gray-700">搜索地址：</label>
+                            <input type="text" id="searchAddress" onkeyup="searchCustomers()" placeholder="输入地址"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="searchContact" class="block text-sm font-medium text-gray-700">搜索联系人：</label>
+                            <input type="text" id="searchContact" onkeyup="searchCustomers()" placeholder="输入联系人"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+                    <!-- 操作按钮 -->
+                    <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto mt-4 md:mt-0">
+                        <!-- 添加客户按钮 -->
+                        <button onclick="openModal()" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                            添加客户
+                        </button>
+                        <!-- 导出CSV按钮 -->
+                        <button type="button" onclick="exportCsv()" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                            导出CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- 客户表格 -->
+            <div class="bg-white p-4 rounded-lg shadow-md overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">客户编号</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">客户名称</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">简称</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">地址</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">公司电话</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">邮件</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">联系人</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">联系人电话</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">备注</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customerTable" class="bg-white divide-y divide-gray-200">
+                        <!-- 客户信息行将由JS动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="customerModal" class="modal fixed z-50 inset-0 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="modal-content bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">添加/编辑客户</h3>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-500">
+                            <span class="sr-only">关闭</span>
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="customerModalForm" action="/add_customer" method="post" class="mt-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="modalCid" class="block text-sm font-medium text-gray-700">客户编号:</label>
+                                <input type="text" id="modalCid" name="Cid" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="modalCcompanyName" class="block text-sm font-medium text-gray-700">客户名称:</label>
+                                <input type="text" id="modalCcompanyName" name="CcompanyName" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="modalCcompanySName" class="block text-sm font-medium text-gray-700">客户简称:</label>
+                                <input type="text" id="modalCcompanySName" name="CcompanySName" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="modalCcompanyAddress" class="block text-sm font-medium text-gray-700">地址:</label>
+                                <input type="text" id="modalCcompanyAddress" name="CcompanyAddress" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="modalCcompanyPhone" class="block text-sm font-medium text-gray-700">公司电话:</label>
+                                <input type="text" id="modalCcompanyPhone" name="CcompanyPhone"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="modalCemail" class="block text-sm font-medium text-gray-700">邮件:</label>
+                                <input type="email" id="modalCemail" name="Cemail"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="modalCname" class="block text-sm font-medium text-gray-700">联系人:</label>
+                                <input type="text" id="modalCname" name="Cname" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="modalCtelPhone" class="block text-sm font-medium text-gray-700">联系人电话:</label>
+                                <input type="text" id="modalCtelPhone" name="CtelPhone" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="modalOther" class="block text-sm font-medium text-gray-700">备注:</label>
+                                <textarea id="modalOther" name="other"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                            </div>
+                        </div>
+                        <div class="mt-5 sm:mt-6 flex justify-end space-x-4">
+                            <button type="button" onclick="closeModal()" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-700">
+                                取消
+                            </button>
+                            <input type="submit" value="提交客户" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

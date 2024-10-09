@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>统计查询</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Include Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Include Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 引入 Luxon 日期库 -->
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+    <!-- 引入 Chart.js 的 Luxon 适配器 -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+    <style>
+        /* Modal styles */
+        .modal {
+            display: none;
+        }
+        .modal-active {
+            display: block;
+        }
+    </style>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        function toggleSubmenu() {
+            const submenu = document.getElementById('submenu');
+            submenu.classList.toggle('hidden');
+        }
+
+        // Load Employee Statistics
+        async function loadEmployeeStatistics() {
+            try {
+                const response = await fetch('/get_employee_statistics');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                const tableBody = document.getElementById('employeeStatisticsTable');
+                tableBody.innerHTML = '';
+                let totalSalary = 0;
+                const salaryData = [];
+                const employeeNames = [];
+                data.forEach(employee => {
+                    const row = document.createElement('tr');
+                    row.classList.add('odd:bg-white', 'even:bg-gray-50');
+                    row.innerHTML = `
+                        <td class="px-4 py-2">${employee[0]}</td>
+                        <td class="px-4 py-2">${employee[1]}</td>
+                        <td class="px-4 py-2">${employee[2]}</td>
+                        <td class="px-4 py-2">${employee[3]}</td>
+                        <td class="px-4 py-2">${employee[4]}</td>
+                        <td class="px-4 py-2">${employee[5]}</td>
+                        <td class="px-4 py-2">${employee[6]}</td>
+                    `;
+                    tableBody.appendChild(row);
+                    totalSalary += parseFloat(employee[5]);
+                    salaryData.push(parseFloat(employee[5]));
+                    employeeNames.push(employee[1]);
+                });
+                document.getElementById('employeeCount').innerText = data.length;
+                document.getElementById('averageSalary').innerText = (totalSalary / data.length).toFixed(2);
+
+                // Create a bar chart for employee salaries
+                const ctx = document.getElementById('employeeSalaryChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: employeeNames,
+                        datasets: [{
+                            label: '工资',
+                            data: salaryData,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                display: false
+                            },
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error loading employee statistics:', error);
+            }
+        }
+
+        // Load Good Statistics
+        async function loadGoodStatistics() {
+            try {
+                const response = await fetch('/get_good_statistics');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                const tableBody = document.getElementById('goodStatisticsTable');
+                tableBody.innerHTML = '';
+                const goodPrices = [];
+                const goodNames = [];
+                data.forEach(good => {
+                    const row = document.createElement('tr');
+                    row.classList.add('odd:bg-white', 'even:bg-gray-50');
+                    row.innerHTML = `
+                        <td class="px-4 py-2">${good[0]}</td>
+                        <td class="px-4 py-2">${good[1]}</td>
+                        <td class="px-4 py-2">${good[2]}</td>
+                        <td class="px-4 py-2">${good[3]}</td>
+                        <td class="px-4 py-2">${good[4]}</td>
+                        <td class="px-4 py-2">${good[5]}</td>
+                    `;
+                    tableBody.appendChild(row);
+                    goodPrices.push(parseFloat(good[2]));
+                    goodNames.push(good[1]);
+                });
+                document.getElementById('goodCount').innerText = data.length;
+
+                // Create a pie chart for goods
+                const ctx = document.getElementById('goodPriceChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: goodNames,
+                        datasets: [{
+                            label: '商品单价',
+                            data: goodPrices,
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.6)',
+                                'rgba(54, 162, 235, 0.6)',
+                                'rgba(255, 206, 86, 0.6)',
+                                'rgba(75, 192, 192, 0.6)',
+                                'rgba(153, 102, 255, 0.6)',
+                                'rgba(255, 159, 64, 0.6)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error loading good statistics:', error);
+            }
+        }
+
+        // Load Purchase Main Statistics
+        async function loadPurchaseMainStatistics() {
+            try {
+                const response = await fetch(`/get_purchase_statistics?timestamp=${new Date().getTime()}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+
+                const tableBody = document.getElementById('purchaseMainStatisticsTable');
+                tableBody.innerHTML = '';
+                const dataPoints = [];
+                data.main.forEach(purchase => {
+                    const row = document.createElement('tr');
+                    row.classList.add('odd:bg-white', 'even:bg-gray-50');
+                    row.innerHTML = `
+                        <td class="px-4 py-2">${purchase[0]}</td>
+                        <td class="px-4 py-2">${purchase[1]}</td>
+                        <td class="px-4 py-2">${purchase[2]}</td>
+                        <td class="px-4 py-2">${purchase[3]}</td>
+                        <td class="px-4 py-2">${purchase[4]}</td>
+                        <td class="px-4 py-2">${purchase[5]}</td>
+                    `;
+                    tableBody.appendChild(row);
+                    const amount = parseFloat(purchase[3]);
+
+                    // 使用 Luxon 解析日期
+                    const date = luxon.DateTime.fromISO(purchase[4]);
+                    dataPoints.push({ x: date.toISO(), y: amount });
+                });
+                document.getElementById('purchaseMainCount').innerText = data.main.length;
+
+                // 调试信息
+                console.log('Data points for chart:', dataPoints);
+
+                // 创建采购总价随时间变化的折线图
+                const ctx = document.getElementById('purchaseMainChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [{
+                            label: '采购总价',
+                            data: dataPoints,
+                            fill: false,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'day',
+                                    tooltipFormat: 'yyyy-MM-dd'
+                                },
+                                adapters: {
+                                    date: {
+                                        locale: 'zh'
+                                    }
+                                }
+                            },
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error loading purchase main statistics:', error);
+            }
+        }
+
+
+        // Load Purchase Detail Statistics
+        async function loadPurchaseDetailStatistics() {
+            try {
+                const response = await fetch(`/get_purchase_statistics?timestamp=${new Date().getTime()}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                const tableBody = document.getElementById('purchaseDetailStatisticsTable');
+                tableBody.innerHTML = '';
+                const detailTotals = [];
+                data.detail.forEach(detail => {
+                    const row = document.createElement('tr');
+                    row.classList.add('odd:bg-white', 'even:bg-gray-50');
+                    row.innerHTML = `
+                        <td class="px-4 py-2">${detail[0]}</td>
+                        <td class="px-4 py-2">${detail[1]}</td>
+                        <td class="px-4 py-2">${detail[2]}</td>
+                        <td class="px-4 py-2">${detail[3]}</td>
+                        <td class="px-4 py-2">${detail[4]}</td>
+                        <td class="px-4 py-2">${detail[5]}</td>
+                        <td class="px-4 py-2">${detail[6]}</td>
+                    `;
+                    tableBody.appendChild(row);
+                    detailTotals.push(parseFloat(detail[5]));
+                });
+                document.getElementById('purchaseDetailCount').innerText = data.detail.length;
+
+                // Create a bar chart for purchase detail totals
+                const ctx = document.getElementById('purchaseDetailChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.detail.map(detail => detail[0]),
+                        datasets: [{
+                            label: '商品总价',
+                            data: detailTotals,
+                            backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                display: false
+                            },
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error loading purchase detail statistics:', error);
+            }
+        }
+
+        window.onload = () => {
+            loadEmployeeStatistics();
+            loadGoodStatistics();
+            loadPurchaseMainStatistics();
+            loadPurchaseDetailStatistics();
+
+            // 添加页面焦点事件监听器
+            window.addEventListener('focus', () => {
+                loadPurchaseMainStatistics();
+            });
+        };
+    </script>
+</head>
+<body class="flex h-screen overflow-hidden">
+    <!-- User Info Display -->
+    <div id="user-info" class="fixed top-4 right-4 flex items-center space-x-2 bg-white p-2 rounded-lg shadow-lg">
+        <i id="user-icon" class="fas fa-user text-2xl"></i>
+        <span id="user-nickname" class="text-lg font-bold text-gray-700">User</span>
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-gray-800 text-white p-4 w-64 transform transition-transform duration-300 ease-in-out h-full fixed top-0 left-0 z-30 -translate-x-full md:translate-x-0">
+        <h1 class="text-center text-2xl font-bold mb-8">导航栏</h1>
+        <nav>
+            <ul>
+                <li class="mb-4">
+                    <a href="/customer_management" class="flex items-center bg-green-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-users mr-2"></i>客户管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="/employee_management" class="flex items-center bg-blue-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-user-tie mr-2"></i>员工管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="/good_management" class="flex items-center bg-yellow-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-box-open mr-2"></i>商品管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <button onclick="toggleSubmenu()" class="w-full text-left flex items-center bg-red-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-shopping-cart mr-2"></i>采购管理
+                    </button>
+                    <ul id="submenu" class="hidden ml-4 mt-2">
+                        <li class="mb-2">
+                            <a href="/main_management" class="flex items-center bg-red-300 text-black p-2 rounded-full justify-center">
+                                <i class="fas fa-table mr-2"></i>主表管理
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/detail_management" class="flex items-center bg-red-300 text-black p-2 rounded-full justify-center">
+                                <i class="fas fa-list mr-2"></i>明细管理
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="mb-4">
+                    <a href="/statistics" class="flex items-center bg-purple-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-chart-bar mr-2"></i>统计查询
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main-content" class="flex-1 overflow-auto p-4 ml-0 md:ml-64 transition-all duration-300">
+        <!-- 放置在合适的位置 -->
+        <button onclick="loadPurchaseMainStatistics()" class="bg-blue-500 text-white px-4 py-2 rounded mb-4">
+            刷新数据
+        </button>
+        <button onclick="toggleSidebar()" class="fixed top-4 left-4 text-white bg-blue-500 rounded-full p-3 z-40 md:hidden">☰</button>
+        <div class="container mx-auto">
+            <h2 class="text-2xl font-bold mb-4">统计查询</h2>
+
+            <!-- Employee Statistics -->
+            <h3 class="text-xl font-semibold mb-4">员工信息统计</h3>
+            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <div class="flex flex-col md:flex-row justify-between mb-4">
+                    <div class="mb-2 md:mb-0">员工总数: <span id="employeeCount">0</span></div>
+                    <div>平均工资: <span id="averageSalary">0.00</span></div>
+                </div>
+                <!-- Chart for Employee Salaries -->
+                <canvas id="employeeSalaryChart" class="mb-6"></canvas>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工编号</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工姓名</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工密码</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工级别</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工电话</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工工资</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">备注</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeStatisticsTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Employee statistics rows will be dynamically loaded -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Good Statistics -->
+            <h3 class="text-xl font-semibold mb-4">商品信息统计</h3>
+            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <div class="flex flex-col md:flex-row justify-between mb-4">
+                    <div class="mb-2 md:mb-0">商品总数: <span id="goodCount">0</span></div>
+                </div>
+                <!-- Chart for Good Prices -->
+                <canvas id="goodPriceChart" class="mb-6"></canvas>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品编号</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品名称</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品单价</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">供应商编号</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品简介</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">备注</th>
+                            </tr>
+                        </thead>
+                        <tbody id="goodStatisticsTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Good statistics rows will be dynamically loaded -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Purchase Main Statistics -->
+            <h3 class="text-xl font-semibold mb-4">采购主表统计</h3>
+            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <div class="flex flex-col md:flex-row justify-between mb-4">
+                    <div class="mb-2 md:mb-0">采购清单总数: <span id="purchaseMainCount">0</span></div>
+                </div>
+                <!-- Chart for Purchase Main Totals -->
+                <canvas id="purchaseMainChart" class="mb-6"></canvas>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购清单号</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工编号</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购数量</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购总价</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购时间</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">备注</th>
+                            </tr>
+                        </thead>
+                        <tbody id="purchaseMainStatisticsTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Purchase main statistics rows will be dynamically loaded -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Purchase Detail Statistics -->
+            <h3 class="text-xl font-semibold mb-4">采购明细表统计</h3>
+            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <div class="flex flex-col md:flex-row justify-between mb-4">
+                    <div class="mb-2 md:mb-0">采购明细总数: <span id="purchaseDetailCount">0</span></div>
+                </div>
+                <!-- Chart for Purchase Detail Totals -->
+                <canvas id="purchaseDetailChart" class="mb-6"></canvas>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购明细号</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购清单号</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品编号</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购数量</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品单价</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品总价</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">备注</th>
+                            </tr>
+                        </thead>
+                        <tbody id="purchaseDetailStatisticsTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Purchase detail statistics rows will be dynamically loaded -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

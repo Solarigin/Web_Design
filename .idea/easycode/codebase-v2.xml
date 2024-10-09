@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="com.obiscr.chatgpt.settings.EasyCodeState">
+    <option name="projectFiles" value="$PROJECT_DIR$/routes/__init__.py;E:/Computer_Science/PythonProject/DB_Test04/routes/customers.py;E:/Computer_Science/PythonProject/DB_Test04/routes/employees.py;E:/Computer_Science/PythonProject/DB_Test04/routes/goods.py;E:/Computer_Science/PythonProject/DB_Test04/routes/purchases.py;E:/Computer_Science/PythonProject/DB_Test04/routes/stats.py;E:/Computer_Science/PythonProject/DB_Test04/templates/customer.html;E:/Computer_Science/PythonProject/DB_Test04/templates/dash_board.html;E:/Computer_Science/PythonProject/DB_Test04/templates/detail_management.html;E:/Computer_Science/PythonProject/DB_Test04/templates/employee.html;E:/Computer_Science/PythonProject/DB_Test04/templates/good.html;E:/Computer_Science/PythonProject/DB_Test04/templates/login.html;E:/Computer_Science/PythonProject/DB_Test04/templates/main_management.html;E:/Computer_Science/PythonProject/DB_Test04/templates/statistics.html;E:/Computer_Science/PythonProject/DB_Test04/templates/test.html;E:/Computer_Science/PythonProject/DB_Test04/app.py;E:/Computer_Science/PythonProject/DB_Test04/auth.py;E:/Computer_Science/PythonProject/DB_Test04/config.py;E:/Computer_Science/PythonProject/DB_Test04/db.py" />
+  </component>
+</project>

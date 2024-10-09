@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+    <!-- 使用最新版本的 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 使用最新版本的 Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen relative">
+    <!-- 背景几何图形容器 -->
+    <div id="background-shapes" class="absolute inset-0 -z-10 overflow-hidden"></div>
+
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <div class="flex justify-center items-center mb-6">
+            <i id="role-icon" class="fas fa-user-shield text-2xl"></i>
+            <h2 class="text-2xl font-bold ml-2">登录</h2>
+        </div>
+
+        <form action="/login" method="post" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div>
+                <label for="role" class="block text-sm font-medium text-gray-700">请选择您的身份</label>
+                <select id="role" name="role" aria-label="请选择您的身份" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="" disabled selected>请选择您的身份</option>
+                    <option value="superadmin">元管理员</option>
+                    <option value="warehouse">仓库管理</option>
+                    <option value="customer">客户管理</option>
+                </select>
+            </div>
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700">通行证</label>
+                <input type="text" id="username" name="username" aria-label="通行证" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <span id="username-error" class="hidden text-red-600 text-sm">请输入有效的通行证</span>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">密码</label>
+                <div class="relative">
+                    <input type="password" id="password" name="password" aria-label="密码" minlength="8" required class="mt-1 block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 px-3 text-gray-600 focus:outline-none" aria-label="切换密码可见性">
+                        <i id="password-icon" class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <span id="password-error" class="hidden text-red-600 text-sm">密码必须至少8个字符长</span>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div>
+                        {% for category, message in messages %}
+                            <div class="text-red-600 bg-red-100 border border-red-400 px-4 py-2 rounded">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div>
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    登录
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 生成背景几何图形
+            generateBackgroundShapes();
+
+            // 更新角色图标
+            document.getElementById('role').addEventListener('change', updateIcon);
+
+            // 验证用户名输入
+            document.getElementById('username').addEventListener('input', validateUsername);
+
+            // 验证密码输入
+            document.getElementById('password').addEventListener('input', validatePassword);
+
+            // 平滑的图标过渡效果
+            const roleIcon = document.getElementById('role-icon');
+            roleIcon.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+        });
+
+        function generateBackgroundShapes() {
+            const shapesContainer = document.getElementById('background-shapes');
+            const shapesCount = Math.floor(Math.random() * 5) + 5; // 生成5到10个形状
+
+            for (let i = 0; i < shapesCount; i++) {
+                const shapeType = ['circle', 'square', 'triangle'][Math.floor(Math.random() * 3)];
+                const shapeSize = Math.floor(Math.random() * 100) + 50; // 大小在50到150像素之间
+                const shape = document.createElement('div');
+
+                // 随机位置
+                const posX = Math.floor(Math.random() * (window.innerWidth - shapeSize));
+                const posY = Math.floor(Math.random() * (window.innerHeight - shapeSize));
+
+                // 随机颜色
+                const colors = ['#FFC0CB', '#FFD700', '#ADFF2F', '#87CEFA', '#FF69B4', '#FFA07A', '#20B2AA'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+
+                // 随机旋转角度
+                const rotation = Math.floor(Math.random() * 360);
+
+                // 形状样式设置
+                if (shapeType === 'circle') {
+                    shape.style.width = shapeSize + 'px';
+                    shape.style.height = shapeSize + 'px';
+                    shape.style.borderRadius = '50%';
+                    shape.style.backgroundColor = color;
+                } else if (shapeType === 'square') {
+                    shape.style.width = shapeSize + 'px';
+                    shape.style.height = shapeSize + 'px';
+                    shape.style.backgroundColor = color;
+                } else if (shapeType === 'triangle') {
+                    shape.style.width = '0';
+                    shape.style.height = '0';
+                    shape.style.borderLeft = (shapeSize / 2) + 'px solid transparent';
+                    shape.style.borderRight = (shapeSize / 2) + 'px solid transparent';
+                    shape.style.borderBottom = shapeSize + 'px solid ' + color;
+                    shape.style.backgroundColor = 'transparent';
+                }
+
+                // 公共样式设置
+                shape.style.position = 'absolute';
+                shape.style.left = posX + 'px';
+                shape.style.top = posY + 'px';
+                shape.style.transform = 'rotate(' + rotation + 'deg)';
+
+                // 将形状添加到容器中
+                shapesContainer.appendChild(shape);
+            }
+        }
+
+        function updateIcon() {
+            const role = document.getElementById('role').value;
+            const icon = document.getElementById('role-icon');
+            if (role === 'superadmin') {
+                icon.className = 'fas fa-user-shield text-2xl';
+            } else if (role === 'warehouse') {
+                icon.className = 'fas fa-warehouse text-2xl';
+            } else if (role === 'customer') {
+                icon.className = 'fas fa-user-tie text-2xl';
+            }
+        }
+
+        function validateUsername() {
+            const usernameInput = document.getElementById('username');
+            const usernameError = document.getElementById('username-error');
+            if (usernameInput.validity.valueMissing) {
+                usernameError.classList.remove('hidden');
+            } else {
+                usernameError.classList.add('hidden');
+            }
+        }
+
+        function validatePassword() {
+            const passwordInput = document.getElementById('password');
+            const passwordError = document.getElementById('password-error');
+            if (passwordInput.value.length < 8) {
+                passwordError.classList.remove('hidden');
+            } else {
+                passwordError.classList.add('hidden');
+            }
+        }
+
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const passwordIcon = document.getElementById('password-icon');
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                passwordIcon.className = "fas fa-eye-slash";
+            } else {
+                passwordInput.type = "password";
+                passwordIcon.className = "fas fa-eye";
+            }
+        }
+    </script>
+</body>
+</html>
