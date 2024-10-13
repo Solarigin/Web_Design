@@ -6,7 +6,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
-        /* Modal styles */
         .modal {
             display: none;
         }
@@ -25,7 +24,6 @@
             submenu.classList.toggle('hidden');
         }
 
-        // Load Purchases Main Table
         async function loadPurchasesMain() {
             try {
                 const response = await fetch('/get_purchases_main');
@@ -44,7 +42,7 @@
                         <td class="px-4 py-2">${purchase.Pdate}</td>
                         <td class="px-4 py-2">${purchase.other}</td>
                         <td class="px-4 py-2">
-                            <button class="text-blue-500 hover:text-blue-700" onclick="editPurchaseMain('${purchase.Pid}')">
+                            <button class="text-blue-500 hover:text-blue-700" onclick="openEditModal('${purchase.Pid}')">
                                 <i class="fas fa-edit"></i> 编辑
                             </button>
                             <button class="text-red-500 hover:text-red-700" onclick="deletePurchaseMain('${purchase.Pid}')">
@@ -60,12 +58,20 @@
             }
         }
 
-        async function editPurchaseMain(Pid) {
+        function openAddModal() {
+            document.getElementById('purchaseMainModal').classList.add('modal-active');
+            document.getElementById('purchaseMainForm').reset();
+            document.getElementById('purchaseMainForm').action = '/add_purchase_main';
+        }
+
+        async function openEditModal(Pid) {
             try {
                 const response = await fetch(`/get_purchase_main?Pid=${Pid}`);
                 if (!response.ok) throw new Error('Network response was not ok');
                 const data = await response.json();
-                // Populate form with data for editing
+
+                openAddModal();
+
                 document.getElementById('Pid').value = data.Pid;
                 document.getElementById('Eid').value = data.Eid;
                 document.getElementById('Pcount').value = data.Pcount;
@@ -73,15 +79,10 @@
                 document.getElementById('Pdate').value = data.Pdate;
                 document.getElementById('other').value = data.other;
                 document.getElementById('purchaseMainForm').action = '/update_purchase_main';
-                openModal();
             } catch (error) {
                 console.error('Error fetching purchase main:', error);
                 alert('加载采购主表时出错，请稍后重试。');
             }
-        }
-
-        function openModal() {
-            document.getElementById('purchaseMainModal').classList.add('modal-active');
         }
 
         function closeModal() {
@@ -168,7 +169,7 @@
                     </div>
                     <!-- 操作按钮 -->
                     <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto mt-4 md:mt-0">
-                        <button onclick="openModal()" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                        <button onclick="openAddModal()" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700">
                             添加采购主表
                         </button>
                         <button type="button" onclick="exportCsv()" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-700">
