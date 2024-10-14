@@ -10,6 +10,7 @@ from auth import role_required
 
 purchases_bp = Blueprint('purchases', __name__)
 
+
 # 主表管理页面，管理员和仓库角色可访问
 @purchases_bp.route('/main_management')
 @role_required(['Admin', 'Warehouse'])
@@ -599,20 +600,19 @@ def get_good_price():
         cursor.close()
         conn.close()
 
-# 获取采购单号列表
-@purchases_bp.route('/get_purchases_main_ids', methods=['GET'])
+@purchases_bp.route('/get_employees', methods=['GET'])
 @role_required(['Admin', 'Warehouse'])
-def get_purchases_main_ids():
+def get_employees():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT Pid FROM tb_pay_main')
-        purchases_main = cursor.fetchall()
-        purchases_main_list = [{'Pid': purchase[0]} for purchase in purchases_main]
-        return jsonify(purchases_main_list)
+        cursor.execute('SELECT Eid FROM tb_employee')
+        employees = cursor.fetchall()
+        employee_list = [{'Eid': emp[0]} for emp in employees]
+        return jsonify(employee_list)
     except Exception as e:
-        current_app.logger.error(f'获取采购单号列表时出错: {e}')
-        return jsonify({'error': '获取采购单号列表失败'}), 500
+        current_app.logger.error(f'获取员工列表时出错: {e}')
+        return jsonify({'error': '获取员工列表失败'}), 500
     finally:
         cursor.close()
         conn.close()

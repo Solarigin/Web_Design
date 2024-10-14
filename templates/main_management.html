@@ -146,8 +146,10 @@
                             </div>
                             <div>
                                 <label for="Eid" class="block text-sm font-medium text-gray-700">员工编号:</label>
-                                <input type="text" id="Eid" name="Eid" required
+                                <select id="Eid" name="Eid" required
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="">请选择员工编号</option>
+                                </select>
                             </div>
                             <!-- Pcount 和 Ptotal 为只读 -->
                             <div>
@@ -234,6 +236,7 @@
             document.getElementById('purchaseMainForm').reset();
             document.getElementById('Pid').readOnly = false;
             document.getElementById('purchaseMainForm').setAttribute('action', '/add_purchase_main');
+            loadEmployeeIds(); // 调用该函数来加载员工编号列表
         }
 
         async function openEditModal(Pid) {
@@ -241,6 +244,7 @@
                 const response = await fetch(`/get_purchase_main?Pid=${Pid}`);
                 if (!response.ok) throw new Error('Network response was not ok');
                 const data = await response.json();
+                await loadEmployeeIds(); // 编辑时也调用该函数来加载员工编号列表
 
                 document.getElementById('purchaseMainModal').classList.add('modal-active');
                 document.getElementById('purchaseMainForm').reset();
@@ -365,6 +369,26 @@
                 alert('提交采购主表时出错，请稍后重试。');
             }
         }
+
+        async function loadEmployeeIds() {
+            try {
+                const response = await fetch('/get_employees'); // 调用新的 API 获取员工列表
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+
+                const selectEid = document.getElementById('Eid');
+                selectEid.innerHTML = '<option value="">请选择员工编号</option>';
+                data.forEach(employee => {
+                    const option = document.createElement('option');
+                    option.value = employee.Eid;
+                    option.textContent = employee.Eid;
+                    selectEid.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading employee ids:', error);
+            }
+        }
+
 
         // 初始化加载数据
         loadPurchasesMain();
