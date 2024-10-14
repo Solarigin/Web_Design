@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>采购明细管理</title>
+    <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         .modal {
@@ -13,6 +15,181 @@
             display: block;
         }
     </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+    <!-- 用户信息显示 -->
+    <div id="user-info" class="fixed top-4 right-4 flex items-center space-x-2 bg-white p-2 rounded-lg shadow-lg">
+        <i id="user-icon" class="fas fa-user text-2xl"></i>
+        <span id="user-nickname" class="text-lg font-bold text-gray-700">User</span>
+    </div>
+
+    <!-- 侧边栏 -->
+    <aside id="sidebar" class="bg-gray-800 text-white p-4 w-64 transform transition-transform duration-300 ease-in-out h-full fixed top-0 left-0 z-30 -translate-x-full md:translate-x-0">
+        <h1 class="text-center text-2xl font-bold mb-8">导航栏</h1>
+        <nav>
+            <ul>
+                <li class="mb-4">
+                    <a href="/customer_management" class="flex items-center bg-green-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-users mr-2"></i>客户管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="/employee_management" class="flex items-center bg-blue-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-user-tie mr-2"></i>员工管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="/good_management" class="flex items-center bg-yellow-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-box-open mr-2"></i>商品管理
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <button onclick="toggleSubmenu()" class="w-full text-left flex items-center bg-red-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-shopping-cart mr-2"></i>采购管理
+                    </button>
+                    <ul id="submenu" class="hidden ml-4 mt-2">
+                        <li class="mb-2">
+                            <a href="/main_management" class="flex items-center bg-red-300 text-black p-2 rounded-full justify-center">
+                                <i class="fas fa-table mr-2"></i>主表管理
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/detail_management" class="flex items-center bg-red-300 text-black p-2 rounded-full justify-center">
+                                <i class="fas fa-list mr-2"></i>明细管理
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="mb-4">
+                    <a href="/statistics" class="flex items-center bg-purple-400 text-black p-2 rounded-full justify-center">
+                        <i class="fas fa-chart-bar mr-2"></i>统计查询
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- 主内容 -->
+    <main id="main-content" class="flex-1 overflow-auto p-4 ml-0 md:ml-64 transition-all duration-300">
+        <button onclick="toggleSidebar()" class="fixed top-4 left-4 text-white bg-blue-500 rounded-full p-3 z-40 md:hidden">☰</button>
+        <div class="container mx-auto">
+            <h2 class="text-2xl font-bold mb-4">采购明细管理</h2>
+
+            <!-- 搜索和操作 -->
+            <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+                <div class="flex flex-wrap md:flex-nowrap items-end justify-start gap-4">
+                    <!-- 搜索字段 -->
+                    <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="searchPid" class="block text-sm font-medium text-gray-700">搜索采购单号：</label>
+                            <input type="text" id="searchPid" onkeyup="searchPurchasesDetail()" placeholder="输入采购单号"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="searchGid" class="block text-sm font-medium text-gray-700">搜索商品编号：</label>
+                            <input type="text" id="searchGid" onkeyup="searchPurchasesDetail()" placeholder="输入商品编号"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+                    <!-- 操作按钮 -->
+                    <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto mt-4 md:mt-0">
+                        <button onclick="openAddModal()" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                            添加采购明细
+                        </button>
+                        <button type="button" onclick="exportCsv()" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                            导出CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 采购明细表 -->
+            <div class="bg-white p-4 rounded-lg shadow-md overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">采购明细号</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">采购单号</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">商品编号</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">采购数量</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">商品单价</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">商品总价</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">备注</th>
+                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="purchaseDetailTable" class="bg-white divide-y divide-gray-200">
+                        <!-- 采购明细信息行将由JS动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- 模态框 -->
+    <div id="purchaseDetailModal" class="modal fixed z-50 inset-0 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="modal-content bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">添加/编辑采购明细</h3>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-500">
+                            <span class="sr-only">关闭</span>
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="purchaseDetailForm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- 在添加模式下隐藏 PDid -->
+                            <div id="PDid-container">
+                                <label for="PDid" class="block text-sm font-medium text-gray-700">采购明细号:</label>
+                                <input type="text" id="PDid" name="PDid" readonly
+                                    class="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="Pid" class="block text-sm font-medium text-gray-700">采购单号:</label>
+                                <input type="text" id="Pid" name="Pid" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="Gid" class="block text-sm font-medium text-gray-700">商品编号:</label>
+                                <input type="text" id="Gid" name="Gid" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" onblur="getGoodPrice()">
+                            </div>
+                            <div>
+                                <label for="Pcount" class="block text-sm font-medium text-gray-700">采购数量:</label>
+                                <input type="number" id="Pcount" name="Pcount" required min="1"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" oninput="updateTotal()">
+                            </div>
+                            <div>
+                                <label for="GPay" class="block text-sm font-medium text-gray-700">商品单价:</label>
+                                <input type="number" step="0.01" id="GPay" name="GPay" readonly
+                                    class="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="total" class="block text-sm font-medium text-gray-700">商品总价:</label>
+                                <input type="number" step="0.01" id="total" name="total" readonly
+                                    class="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm sm:text-sm">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="other" class="block text-sm font-medium text-gray-700">备注:</label>
+                                <textarea id="other" name="other"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                            </div>
+                        </div>
+                        <div class="mt-5 sm:mt-6 flex justify-end space-x-4">
+                            <button type="button" onclick="closeModal()" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-700">
+                                取消
+                            </button>
+                            <input type="submit" value="提交采购明细" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 脚本 -->
     <script>
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
@@ -62,7 +239,8 @@
         function openAddModal() {
             document.getElementById('purchaseDetailModal').classList.add('modal-active');
             document.getElementById('purchaseDetailForm').reset();
-            document.getElementById('purchaseDetailForm').action = '/add_purchase_detail';
+            document.getElementById('PDid-container').style.display = 'none';
+            document.getElementById('purchaseDetailForm').setAttribute('action', '/add_purchase_detail');
         }
 
         async function openEditModal(PDid) {
@@ -71,8 +249,9 @@
                 if (!response.ok) throw new Error('Network response was not ok');
                 const data = await response.json();
 
-                openAddModal();
-
+                document.getElementById('purchaseDetailModal').classList.add('modal-active');
+                document.getElementById('purchaseDetailForm').reset();
+                document.getElementById('PDid-container').style.display = 'block';
                 document.getElementById('PDid').value = data.PDid;
                 document.getElementById('Pid').value = data.Pid;
                 document.getElementById('Gid').value = data.Gid;
@@ -80,7 +259,7 @@
                 document.getElementById('GPay').value = data.GPay;
                 document.getElementById('total').value = data.total;
                 document.getElementById('other').value = data.other;
-                document.getElementById('purchaseDetailForm').action = '/update_purchase_detail';
+                document.getElementById('purchaseDetailForm').setAttribute('action', '/update_purchase_detail');
             } catch (error) {
                 console.error('Error fetching purchase detail:', error);
                 alert('加载采购明细时出错，请稍后重试。');
@@ -91,179 +270,141 @@
             document.getElementById('purchaseDetailModal').classList.remove('modal-active');
         }
 
-        window.onload = loadPurchasesDetail;
-    </script>
-</head>
-<body class="flex h-screen overflow-hidden">
-    <!-- User Info Display -->
-    <div id="user-info" class="fixed top-4 right-4 flex items-center space-x-2 bg-white p-2 rounded-lg shadow-lg">
-        <i id="user-icon" class="fas fa-user text-2xl"></i>
-        <span id="user-nickname" class="text-lg font-bold text-gray-700">User</span>
-    </div>
+        async function getGoodPrice() {
+            const Gid = document.getElementById('Gid').value.trim();
+            if (Gid) {
+                try {
+                    const response = await fetch(`/get_good_price?Gid=${encodeURIComponent(Gid)}`);
+                    const data = await response.json();
+                    if (response.ok) {
+                        document.getElementById('GPay').value = data.GPay;
+                        updateTotal();
+                    } else {
+                        alert(data.error || '获取商品价格失败');
+                        document.getElementById('GPay').value = '';
+                        document.getElementById('total').value = '';
+                    }
+                } catch (error) {
+                    console.error('Error getting good price:', error);
+                    alert('获取商品价格时出错，请稍后重试。');
+                }
+            }
+        }
 
-    <!-- Sidebar -->
-    <aside id="sidebar" class="bg-gray-800 text-white p-4 w-64 transform transition-transform duration-300 ease-in-out h-full fixed top-0 left-0 z-30 -translate-x-full md:translate-x-0">
-        <h1 class="text-center text-2xl font-bold mb-8">导航栏</h1>
-        <nav>
-            <ul>
-                <li class="mb-4">
-                    <a href="/customer_management" class="flex items-center bg-green-400 text-black p-2 rounded-full justify-center">
-                        <i class="fas fa-users mr-2"></i>客户管理
-                    </a>
-                </li>
-                <li class="mb-4">
-                    <a href="/employee_management" class="flex items-center bg-blue-400 text-black p-2 rounded-full justify-center">
-                        <i class="fas fa-user-tie mr-2"></i>员工管理
-                    </a>
-                </li>
-                <li class="mb-4">
-                    <a href="/good_management" class="flex items-center bg-yellow-400 text-black p-2 rounded-full justify-center">
-                        <i class="fas fa-box-open mr-2"></i>商品管理
-                    </a>
-                </li>
-                <li class="mb-4">
-                    <button onclick="toggleSubmenu()" class="w-full text-left flex items-center bg-red-400 text-black p-2 rounded-full justify-center">
-                        <i class="fas fa-shopping-cart mr-2"></i>采购管理
-                    </button>
-                    <ul id="submenu" class="hidden ml-4 mt-2">
-                        <li class="mb-2">
-                            <a href="/main_management" class="flex items-center bg-red-300 text-black p-2 rounded-full justify-center">
-                                <i class="fas fa-table mr-2"></i>主表管理
-                            </a>
-                        </li>
-                        <li>
-                            <a href="/detail_management" class="flex items-center bg-red-300 text-black p-2 rounded-full justify-center">
-                                <i class="fas fa-list mr-2"></i>明细管理
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <li class="mb-4">
-                    <a href="/statistics" class="flex items-center bg-purple-400 text-black p-2 rounded-full justify-center">
-                        <i class="fas fa-chart-bar mr-2"></i>统计查询
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </aside>
+        function updateTotal() {
+            const Pcount = parseInt(document.getElementById('Pcount').value) || 0;
+            const GPay = parseFloat(document.getElementById('GPay').value) || 0.0;
+            const total = Pcount * GPay;
+            document.getElementById('total').value = total.toFixed(2);
+        }
 
-    <!-- Main Content -->
-    <main id="main-content" class="flex-1 overflow-auto p-4 ml-0 md:ml-64 transition-all duration-300">
-        <button onclick="toggleSidebar()" class="fixed top-4 left-4 text-white bg-blue-500 rounded-full p-3 z-40 md:hidden">☰</button>
-        <div class="container mx-auto">
-            <h2 class="text-2xl font-bold mb-4">采购明细管理</h2>
+        async function deletePurchaseDetail(PDid) {
+            if (confirm('确定要删除该采购明细吗？')) {
+                try {
+                    const response = await fetch('/delete_purchase_detail', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ PDid: PDid })
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        alert(data.message);
+                        loadPurchasesDetail();
+                    } else {
+                        alert(data.error || '删除失败');
+                    }
+                } catch (error) {
+                    console.error('Error deleting purchase detail:', error);
+                    alert('删除采购明细时出错，请稍后重试。');
+                }
+            }
+        }
 
-            <!-- 搜索和操作 -->
-            <div class="bg-white p-4 rounded-lg shadow-md mb-4">
-                <div class="flex flex-wrap md:flex-nowrap items-end justify-start gap-4">
-                    <!-- 搜索字段 -->
-                    <div class="w-full md:flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="searchPid" class="block text-sm font-medium text-gray-700">搜索采购单号：</label>
-                            <input type="text" id="searchPid" onkeyup="searchPurchasesDetail()" placeholder="输入采购单号"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="searchGid" class="block text-sm font-medium text-gray-700">搜索商品编号：</label>
-                            <input type="text" id="searchGid" onkeyup="searchPurchasesDetail()" placeholder="输入商品编号"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-                    </div>
-                    <!-- 操作按钮 -->
-                    <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto mt-4 md:mt-0">
-                        <button onclick="openAddModal() " class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                            添加采购明细
-                        </button>
-                        <button type="button" onclick="exportCsv()" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-700">
-                            导出CSV
-                        </button>
-                    </div>
-                </div>
-            </div>
+        async function searchPurchasesDetail() {
+            const Pid = document.getElementById('searchPid').value.trim();
+            const Gid = document.getElementById('searchGid').value.trim();
 
-            <!-- 采购明细表 -->
-            <div class="bg-white p-4 rounded-lg shadow-md overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">采购明细号</th>
-                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">采购单号</th>
-                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">商品编号</th>
-                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">采购数量</th>
-                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">商品单价</th>
-                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">商品总价</th>
-                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">备注</th>
-                            <th scope="col" class="px-4 py-2 text-left font-medium text-gray-500 uppercase">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="purchaseDetailTable" class="bg-white divide-y divide-gray-200">
-                        <!-- 采购明细信息行将由JS动态生成 -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
-
-    <!-- Modal -->
-    <div id="purchaseDetailModal" class="modal fixed z-50 inset-0 overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen">
-            <div class="modal-content bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
-                <div class="px-4 py-5 sm:p-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">添加/编辑采购明细</h3>
-                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-500">
-                            <span class="sr-only">关闭</span>
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <form id="purchaseDetailForm" action="/add_purchase_detail" method="post" class="mt-5">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="PDid" class="block text-sm font-medium text-gray-700">采购明细号:</label>
-                                <input type="text" id="PDid" name="PDid" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                            <div>
-                                <label for="Pid" class="block text-sm font-medium text-gray-700">采购单号:</label>
-                                <input type="text" id="Pid" name="Pid" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                            <div>
-                                <label for="Gid" class="block text-sm font-medium text-gray-700">商品编号:</label>
-                                <input type="text" id="Gid" name="Gid" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" onblur="getGoodPrice()">
-                            </div>
-                            <div>
-                                <label for="Pcount" class="block text-sm font-medium text-gray-700">采购数量:</label>
-                                <input type="number" id="Pcount" name="Pcount" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" oninput="updateTotal()">
-                            </div>
-                            <div>
-                                <label for="GPay" class="block text-sm font-medium text-gray-700">商品单价:</label>
-                                <input type="number" step="0.01" id="GPay" name="GPay" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" readonly>
-                            </div>
-                            <div>
-                                <label for="total" class="block text-sm font-medium text-gray-700">商品总价:</label>
-                                <input type="number" step="0.01" id="total" name="total" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" readonly>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label for="other" class="block text-sm font-medium text-gray-700">备注:</label>
-                                <textarea id="other" name="other"
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
-                            </div>
-                        </div>
-                        <div class="mt-5 sm:mt-6 flex justify-end space-x-4">
-                            <button type="button" onclick="closeModal()" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-700">
-                                取消
+            try {
+                const response = await fetch(`/search_purchases_detail?pid=${encodeURIComponent(Pid)}&gid=${encodeURIComponent(Gid)}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                const tableBody = document.getElementById('purchaseDetailTable');
+                tableBody.innerHTML = '';
+                data.forEach(detail => {
+                    const row = document.createElement('tr');
+                    row.classList.add('odd:bg-white', 'even:bg-gray-50');
+                    row.innerHTML = `
+                        <td class="px-4 py-2">${detail.PDid}</td>
+                        <td class="px-4 py-2">${detail.Pid}</td>
+                        <td class="px-4 py-2">${detail.Gid}</td>
+                        <td class="px-4 py-2">${detail.Pcount}</td>
+                        <td class="px-4 py-2">${detail.GPay}</td>
+                        <td class="px-4 py-2">${detail.total}</td>
+                        <td class="px-4 py-2">${detail.other}</td>
+                        <td class="px-4 py-2">
+                            <button class="text-blue-500 hover:text-blue-700" onclick="openEditModal('${detail.PDid}')">
+                                <i class="fas fa-edit"></i> 编辑
                             </button>
-                            <input type="submit" value="提交采购明细" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+                            <button class="text-red-500 hover:text-red-700" onclick="deletePurchaseDetail('${detail.PDid}')">
+                                <i class="fas fa-trash-alt"></i> 删除
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error searching purchase details:', error);
+                alert('搜索采购明细时出错，请稍后重试。');
+            }
+        }
+
+        function exportCsv() {
+            window.location.href = '/export_purchases';
+        }
+
+        document.getElementById('purchaseDetailForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            submitPurchaseDetailForm();
+        });
+
+        async function submitPurchaseDetailForm() {
+            const form = document.getElementById('purchaseDetailForm');
+            const formData = new FormData(form);
+            const action = form.getAttribute('action');
+            const method = 'POST';
+
+            // 将 FormData 转换为 JSON
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+
+            try {
+                const response = await fetch(action, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                    closeModal();
+                    loadPurchasesDetail();
+                } else {
+                    alert(result.error || '操作失败');
+                }
+            } catch (error) {
+                console.error('Error submitting purchase detail form:', error);
+                alert('提交采购明细时出错，请稍后重试。');
+            }
+        }
+
+        // 初始化加载数据
+        loadPurchasesDetail();
+    </script>
 </body>
 </html>

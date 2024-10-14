@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>采购主表管理</title>
+    <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         .modal {
@@ -13,93 +15,15 @@
             display: block;
         }
     </style>
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('-translate-x-full');
-        }
-
-        function toggleSubmenu() {
-            const submenu = document.getElementById('submenu');
-            submenu.classList.toggle('hidden');
-        }
-
-        async function loadPurchasesMain() {
-            try {
-                const response = await fetch('/get_purchases_main');
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-                const tableBody = document.getElementById('purchaseMainTable');
-                tableBody.innerHTML = '';
-                data.forEach(purchase => {
-                    const row = document.createElement('tr');
-                    row.classList.add('odd:bg-white', 'even:bg-gray-50');
-                    row.innerHTML = `
-                        <td class="px-4 py-2">${purchase.Pid}</td>
-                        <td class="px-4 py-2">${purchase.Eid}</td>
-                        <td class="px-4 py-2">${purchase.Pcount}</td>
-                        <td class="px-4 py-2">${purchase.Ptotal}</td>
-                        <td class="px-4 py-2">${purchase.Pdate}</td>
-                        <td class="px-4 py-2">${purchase.other}</td>
-                        <td class="px-4 py-2">
-                            <button class="text-blue-500 hover:text-blue-700" onclick="openEditModal('${purchase.Pid}')">
-                                <i class="fas fa-edit"></i> 编辑
-                            </button>
-                            <button class="text-red-500 hover:text-red-700" onclick="deletePurchaseMain('${purchase.Pid}')">
-                                <i class="fas fa-trash-alt"></i> 删除
-                            </button>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            } catch (error) {
-                console.error('Error loading purchase main:', error);
-                alert('加载采购主表时出错，请稍后重试。');
-            }
-        }
-
-        function openAddModal() {
-            document.getElementById('purchaseMainModal').classList.add('modal-active');
-            document.getElementById('purchaseMainForm').reset();
-            document.getElementById('purchaseMainForm').action = '/add_purchase_main';
-        }
-
-        async function openEditModal(Pid) {
-            try {
-                const response = await fetch(`/get_purchase_main?Pid=${Pid}`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-
-                openAddModal();
-
-                document.getElementById('Pid').value = data.Pid;
-                document.getElementById('Eid').value = data.Eid;
-                document.getElementById('Pcount').value = data.Pcount;
-                document.getElementById('Ptotal').value = data.Ptotal;
-                document.getElementById('Pdate').value = data.Pdate;
-                document.getElementById('other').value = data.other;
-                document.getElementById('purchaseMainForm').action = '/update_purchase_main';
-            } catch (error) {
-                console.error('Error fetching purchase main:', error);
-                alert('加载采购主表时出错，请稍后重试。');
-            }
-        }
-
-        function closeModal() {
-            document.getElementById('purchaseMainModal').classList.remove('modal-active');
-        }
-
-        window.onload = loadPurchasesMain;
-    </script>
 </head>
 <body class="flex h-screen overflow-hidden">
-    <!-- User Info Display -->
+    <!-- 用户信息显示 -->
     <div id="user-info" class="fixed top-4 right-4 flex items-center space-x-2 bg-white p-2 rounded-lg shadow-lg">
         <i id="user-icon" class="fas fa-user text-2xl"></i>
         <span id="user-nickname" class="text-lg font-bold text-gray-700">User</span>
     </div>
 
-    <!-- Sidebar -->
+    <!-- 侧边栏 -->
     <aside id="sidebar" class="bg-gray-800 text-white p-4 w-64 transform transition-transform duration-300 ease-in-out h-full fixed top-0 left-0 z-30 -translate-x-full md:translate-x-0">
         <h1 class="text-center text-2xl font-bold mb-8">导航栏</h1>
         <nav>
@@ -145,7 +69,7 @@
         </nav>
     </aside>
 
-    <!-- Main Content -->
+    <!-- 主内容 -->
     <main id="main-content" class="flex-1 overflow-auto p-4 ml-0 md:ml-64 transition-all duration-300">
         <button onclick="toggleSidebar()" class="fixed top-4 left-4 text-white bg-blue-500 rounded-full p-3 z-40 md:hidden">☰</button>
         <div class="container mx-auto">
@@ -201,7 +125,7 @@
         </div>
     </main>
 
-    <!-- Modal -->
+    <!-- 模态框 -->
     <div id="purchaseMainModal" class="modal fixed z-50 inset-0 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen">
             <div class="modal-content bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
@@ -213,7 +137,7 @@
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    <form id="purchaseMainForm" action="/add_purchase_main" method="post" class="mt-5">
+                    <form id="purchaseMainForm">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label for="Pid" class="block text-sm font-medium text-gray-700">采购单号:</label>
@@ -225,19 +149,20 @@
                                 <input type="text" id="Eid" name="Eid" required
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
+                            <!-- Pcount 和 Ptotal 为只读 -->
                             <div>
                                 <label for="Pcount" class="block text-sm font-medium text-gray-700">采购数量:</label>
-                                <input type="number" id="Pcount" name="Pcount" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <input type="number" id="Pcount" name="Pcount" readonly
+                                    class="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm sm:text-sm">
                             </div>
                             <div>
                                 <label for="Ptotal" class="block text-sm font-medium text-gray-700">采购总价:</label>
-                                <input type="number" step="0.01" id="Ptotal" name="Ptotal" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <input type="number" step="0.01" id="Ptotal" name="Ptotal" readonly
+                                    class="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm sm:text-sm">
                             </div>
                             <div>
                                 <label for="Pdate" class="block text-sm font-medium text-gray-700">采购时间:</label>
-                                <input type="text" id="Pdate" name="Pdate" required
+                                <input type="date" id="Pdate" name="Pdate" required
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
                             <div class="md:col-span-2">
@@ -257,5 +182,192 @@
             </div>
         </div>
     </div>
+
+    <!-- 脚本 -->
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        function toggleSubmenu() {
+            const submenu = document.getElementById('submenu');
+            submenu.classList.toggle('hidden');
+        }
+
+        async function loadPurchasesMain() {
+            try {
+                const response = await fetch('/get_purchases_main');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                const tableBody = document.getElementById('purchaseMainTable');
+                tableBody.innerHTML = '';
+                data.forEach(purchase => {
+                    const row = document.createElement('tr');
+                    row.classList.add('odd:bg-white', 'even:bg-gray-50');
+                    row.innerHTML = `
+                        <td class="px-4 py-2">${purchase.Pid}</td>
+                        <td class="px-4 py-2">${purchase.Eid}</td>
+                        <td class="px-4 py-2">${purchase.Pcount}</td>
+                        <td class="px-4 py-2">${purchase.Ptotal}</td>
+                        <td class="px-4 py-2">${purchase.Pdate}</td>
+                        <td class="px-4 py-2">${purchase.other}</td>
+                        <td class="px-4 py-2">
+                            <button class="text-blue-500 hover:text-blue-700" onclick="openEditModal('${purchase.Pid}')">
+                                <i class="fas fa-edit"></i> 编辑
+                            </button>
+                            <button class="text-red-500 hover:text-red-700" onclick="deletePurchaseMain('${purchase.Pid}')">
+                                <i class="fas fa-trash-alt"></i> 删除
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading purchase main:', error);
+                alert('加载采购主表时出错，请稍后重试。');
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('purchaseMainModal').classList.add('modal-active');
+            document.getElementById('purchaseMainForm').reset();
+            document.getElementById('Pid').readOnly = false;
+            document.getElementById('purchaseMainForm').setAttribute('action', '/add_purchase_main');
+        }
+
+        async function openEditModal(Pid) {
+            try {
+                const response = await fetch(`/get_purchase_main?Pid=${Pid}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+
+                document.getElementById('purchaseMainModal').classList.add('modal-active');
+                document.getElementById('purchaseMainForm').reset();
+                document.getElementById('Pid').value = data.Pid;
+                document.getElementById('Pid').readOnly = true;
+                document.getElementById('Eid').value = data.Eid;
+                document.getElementById('Pcount').value = data.Pcount;
+                document.getElementById('Ptotal').value = data.Ptotal;
+                document.getElementById('Pdate').value = data.Pdate;
+                document.getElementById('other').value = data.other;
+                document.getElementById('purchaseMainForm').setAttribute('action', '/update_purchase_main');
+            } catch (error) {
+                console.error('Error fetching purchase main:', error);
+                alert('加载采购主表时出错，请稍后重试。');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('purchaseMainModal').classList.remove('modal-active');
+        }
+
+        async function deletePurchaseMain(Pid) {
+            if (confirm('确定要删除该采购记录吗？')) {
+                try {
+                    const response = await fetch('/delete_purchase_main', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ Pid: Pid })
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        alert(data.message);
+                        loadPurchasesMain();
+                    } else {
+                        alert(data.error || '删除失败');
+                    }
+                } catch (error) {
+                    console.error('Error deleting purchase main:', error);
+                    alert('删除采购记录时出错，请稍后重试。');
+                }
+            }
+        }
+
+        async function searchPurchasesMain() {
+            const Eid = document.getElementById('searchEid').value.trim();
+            const Pdate = document.getElementById('searchPdate').value.trim();
+
+            try {
+                const response = await fetch(`/search_purchases_main?eid=${encodeURIComponent(Eid)}&pdate=${encodeURIComponent(Pdate)}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                const tableBody = document.getElementById('purchaseMainTable');
+                tableBody.innerHTML = '';
+                data.forEach(purchase => {
+                    const row = document.createElement('tr');
+                    row.classList.add('odd:bg-white', 'even:bg-gray-50');
+                    row.innerHTML = `
+                        <td class="px-4 py-2">${purchase.Pid}</td>
+                        <td class="px-4 py-2">${purchase.Eid}</td>
+                        <td class="px-4 py-2">${purchase.Pcount}</td>
+                        <td class="px-4 py-2">${purchase.Ptotal}</td>
+                        <td class="px-4 py-2">${purchase.Pdate}</td>
+                        <td class="px-4 py-2">${purchase.other}</td>
+                        <td class="px-4 py-2">
+                            <button class="text-blue-500 hover:text-blue-700" onclick="openEditModal('${purchase.Pid}')">
+                                <i class="fas fa-edit"></i> 编辑
+                            </button>
+                            <button class="text-red-500 hover:text-red-700" onclick="deletePurchaseMain('${purchase.Pid}')">
+                                <i class="fas fa-trash-alt"></i> 删除
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error searching purchase main:', error);
+                alert('搜索采购主表时出错，请稍后重试。');
+            }
+        }
+
+        function exportCsv() {
+            window.location.href = '/export_purchases';
+        }
+
+        document.getElementById('purchaseMainForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            submitPurchaseMainForm();
+        });
+
+        async function submitPurchaseMainForm() {
+            const form = document.getElementById('purchaseMainForm');
+            const formData = new FormData(form);
+            const action = form.getAttribute('action');
+            const method = 'POST';
+
+            // 将 FormData 转换为 JSON
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+
+            try {
+                const response = await fetch(action, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                    closeModal();
+                    loadPurchasesMain();
+                } else {
+                    alert(result.error || '操作失败');
+                }
+            } catch (error) {
+                console.error('Error submitting purchase main form:', error);
+                alert('提交采购主表时出错，请稍后重试。');
+            }
+        }
+
+        // 初始化加载数据
+        loadPurchasesMain();
+    </script>
 </body>
 </html>
