@@ -598,3 +598,21 @@ def get_good_price():
     finally:
         cursor.close()
         conn.close()
+
+# 获取采购单号列表
+@purchases_bp.route('/get_purchases_main_ids', methods=['GET'])
+@role_required(['Admin', 'Warehouse'])
+def get_purchases_main_ids():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT Pid FROM tb_pay_main')
+        purchases_main = cursor.fetchall()
+        purchases_main_list = [{'Pid': purchase[0]} for purchase in purchases_main]
+        return jsonify(purchases_main_list)
+    except Exception as e:
+        current_app.logger.error(f'获取采购单号列表时出错: {e}')
+        return jsonify({'error': '获取采购单号列表失败'}), 500
+    finally:
+        cursor.close()
+        conn.close()
