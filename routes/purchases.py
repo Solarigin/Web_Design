@@ -600,19 +600,21 @@ def get_good_price():
         cursor.close()
         conn.close()
 
-@purchases_bp.route('/get_employees', methods=['GET'])
+
+# 获取采购单号列表
+@purchases_bp.route('/get_purchases_main_ids', methods=['GET'])
 @role_required(['Admin', 'Warehouse'])
-def get_employees():
+def get_purchases_main_ids():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT Eid FROM tb_employee')
-        employees = cursor.fetchall()
-        employee_list = [{'Eid': emp[0]} for emp in employees]
-        return jsonify(employee_list)
+        cursor.execute('SELECT Pid FROM tb_pay_main')
+        purchases_main = cursor.fetchall()
+        purchases_main_list = [{'Pid': purchase[0]} for purchase in purchases_main]
+        return jsonify(purchases_main_list)
     except Exception as e:
-        current_app.logger.error(f'获取员工列表时出错: {e}')
-        return jsonify({'error': '获取员工列表失败'}), 500
+        current_app.logger.error(f'获取采购单号列表时出错: {e}')
+        return jsonify({'error': '获取采购单号列表失败'}), 500
     finally:
         cursor.close()
         conn.close()
