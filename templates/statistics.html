@@ -308,8 +308,29 @@
             }
         }
 
-        // Fetch user info and update display
+        // 获取用户信息并更新显示
         document.addEventListener('DOMContentLoaded', function () {
+            // 调用加载统计数据的函数
+            loadEmployeeStatistics();
+            loadGoodStatistics();
+            loadPurchaseMainStatistics();
+            loadPurchaseDetailStatistics();
+
+            // 默认显示第一个统计模块（员工信息统计）
+            const defaultButton = document.querySelector('.tab-button');
+            showStatistics('employeeStatistics', defaultButton);
+
+            // 检查是否有闪存消息
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        if ('{{ category }}' === 'error') {
+                            showToast('{{ message }}');
+                        }
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
             // 获取用户信息
             fetch('/get_user_info')
                 .then(response => {
@@ -324,33 +345,49 @@
                     if (data.username) {
                         document.getElementById('user-nickname').textContent = data.username;
                         const userIcon = document.getElementById('user-icon');
-
                         // 根据角色更新图标
                         if (data.role === 'Admin') {
                             userIcon.className = 'fas fa-user-shield text-2xl';
-                        } else if (data.role === 'warehouse') {
+                        } else if (data.role === 'Warehouse') {
                             userIcon.className = 'fas fa-warehouse text-2xl';
-                        } else if (data.role === 'customer') {
+                        } else if (data.role === 'CustomerManager') {
                             userIcon.className = 'fas fa-user-tie text-2xl';
                         } else {
                             userIcon.className = 'fas fa-user text-2xl';
                         }
 
-                        // 控制侧边栏显示项目
-                        const sidebarItems = document.querySelectorAll('#sidebar nav ul li');
-                        sidebarItems.forEach(item => {
-                            const itemRole = item.dataset.role;
-                            if (itemRole && !itemRole.split(',').includes(data.role)) {
-                                item.classList.add('hidden');
+                        // 根据用户角色显示/隐藏菜单项
+                        const userRole = data.role;
+                        const menuItems = document.querySelectorAll('nav li[data-role]');
+                        menuItems.forEach(item => {
+                            const roles = item.getAttribute('data-role').split(',');
+                            if (!roles.includes(userRole)) {
+                                item.style.display = 'none';
                             }
                         });
                     }
                 })
                 .catch(error => {
-                    console.error('Error fetching user info:', error);
+                    console.error('获取用户信息时出错:', error);
                     // 出错时重定向到登录页面
                     window.location.href = '/login';
                 });
+
+            // 切换登出按钮的显示和隐藏
+            document.getElementById('user-info').addEventListener('click', function (event) {
+                event.stopPropagation(); // 阻止事件冒泡
+                const logoutButton = document.getElementById('logout-button');
+                logoutButton.classList.toggle('hidden');
+            });
+
+            // 点击页面其他地方时隐藏登出按钮
+            document.addEventListener('click', function(event) {
+                const userInfo = document.getElementById('user-info');
+                const logoutButton = document.getElementById('logout-button');
+                if (!userInfo.contains(event.target) && !logoutButton.contains(event.target)) {
+                    logoutButton.classList.add('hidden');
+                }
+            });
         });
 
         // 处理登出操作
@@ -394,7 +431,7 @@
         <span id="toast-message"></span>
     </div>
 
-    <!-- Sidebar -->
+    <!-- 侧边栏 -->
     <aside id="sidebar" class="bg-gray-800 text-white p-4 w-64 transform transition-transform duration-300 ease-in-out h-full fixed top-0 left-0 z-30 -translate-x-full md:translate-x-0">
         <h1 class="text-center text-2xl font-bold mb-8">导航栏</h1>
         <nav>
