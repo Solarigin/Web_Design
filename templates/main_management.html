@@ -35,27 +35,27 @@
         <span id="toast-message"></span>
     </div>
 
-    <!-- 侧边栏 -->
+    <!-- Sidebar -->
     <aside id="sidebar" class="bg-gray-800 text-white p-4 w-64 transform transition-transform duration-300 ease-in-out h-full fixed top-0 left-0 z-30 -translate-x-full md:translate-x-0">
         <h1 class="text-center text-2xl font-bold mb-8">导航栏</h1>
         <nav>
             <ul>
-                <li class="mb-4">
+                <li class="mb-4" data-role="Admin,CustomerManager">
                     <a href="/customer_management" class="flex items-center bg-green-400 text-black p-2 rounded-full justify-center">
                         <i class="fas fa-users mr-2"></i>客户管理
                     </a>
                 </li>
-                <li class="mb-4">
+                <li class="mb-4" data-role="Admin">
                     <a href="/employee_management" class="flex items-center bg-blue-400 text-black p-2 rounded-full justify-center">
                         <i class="fas fa-user-tie mr-2"></i>员工管理
                     </a>
                 </li>
-                <li class="mb-4">
+                <li class="mb-4" data-role="Admin,Warehouse">
                     <a href="/good_management" class="flex items-center bg-yellow-400 text-black p-2 rounded-full justify-center">
                         <i class="fas fa-box-open mr-2"></i>商品管理
                     </a>
                 </li>
-                <li class="mb-4">
+                <li class="mb-4" data-role="Warehouse">
                     <button onclick="toggleSubmenu()" class="w-full text-left flex items-center bg-red-400 text-black p-2 rounded-full justify-center">
                         <i class="fas fa-shopping-cart mr-2"></i>采购管理
                     </button>
@@ -72,7 +72,7 @@
                         </li>
                     </ul>
                 </li>
-                <li class="mb-4">
+                <li class="mb-4" data-role="Admin,Warehouse,Guest">
                     <a href="/statistics" class="flex items-center bg-purple-400 text-black p-2 rounded-full justify-center">
                         <i class="fas fa-chart-bar mr-2"></i>统计查询
                     </a>
@@ -403,17 +403,6 @@
 
         // Fetch user info and update display
         document.addEventListener('DOMContentLoaded', function () {
-            // 检查是否有闪存消息
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        if ('{{ category }}' === 'error') {
-                            showToast('{{ message }}');
-                        }
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
             // 获取用户信息
             fetch('/get_user_info')
                 .then(response => {
@@ -428,8 +417,9 @@
                     if (data.username) {
                         document.getElementById('user-nickname').textContent = data.username;
                         const userIcon = document.getElementById('user-icon');
+
                         // 根据角色更新图标
-                        if (data.role === 'superadmin') {
+                        if (data.role === 'Admin') {
                             userIcon.className = 'fas fa-user-shield text-2xl';
                         } else if (data.role === 'warehouse') {
                             userIcon.className = 'fas fa-warehouse text-2xl';
@@ -438,6 +428,15 @@
                         } else {
                             userIcon.className = 'fas fa-user text-2xl';
                         }
+
+                        // 控制侧边栏显示项目
+                        const sidebarItems = document.querySelectorAll('#sidebar nav ul li');
+                        sidebarItems.forEach(item => {
+                            const itemRole = item.dataset.role;
+                            if (itemRole && !itemRole.split(',').includes(data.role)) {
+                                item.classList.add('hidden');
+                            }
+                        });
                     }
                 })
                 .catch(error => {
@@ -445,22 +444,6 @@
                     // 出错时重定向到登录页面
                     window.location.href = '/login';
                 });
-
-            // 切换登出按钮的显示和隐藏
-            document.getElementById('user-info').addEventListener('click', function (event) {
-                event.stopPropagation(); // 阻止事件冒泡
-                const logoutButton = document.getElementById('logout-button');
-                logoutButton.classList.toggle('hidden');
-            });
-
-            // 点击页面其他地方时隐藏登出按钮
-            document.addEventListener('click', function(event) {
-                const userInfo = document.getElementById('user-info');
-                const logoutButton = document.getElementById('logout-button');
-                if (!userInfo.contains(event.target) && !logoutButton.contains(event.target)) {
-                    logoutButton.classList.add('hidden');
-                }
-            });
         });
 
         // 处理登出操作

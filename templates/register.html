@@ -40,6 +40,7 @@
                 <label for="role" class="block text-sm font-medium text-gray-700">请选择您的身份</label>
                 <select id="role" name="role" aria-label="请选择您的身份" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
                     <option value="" disabled selected>请选择您的身份</option>
+{#                    <option value="Admin">元管理员</option>#}
                     <option value="Warehouse">仓库管理</option>
                     <option value="CustomerManager">客户管理</option>
                     <option value="Guest">游客</option>
@@ -52,7 +53,7 @@
             <div>
                 <label for="password" class="block text-sm font-medium text-gray-700">密码</label>
                 <div class="relative">
-                    <input type="password" id="password" name="password" aria-label="密码" minlength="8" required class="mt-1 block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm">
+                    <input type="password" id="password" name="password" aria-label="密码" minlength="8" required pattern=".*\S.*" class="mt-1 block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm">
                     <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 px-3 text-gray-600" aria-label="切换密码可见性">
                         <i id="password-icon" class="fas fa-eye"></i>
                     </button>

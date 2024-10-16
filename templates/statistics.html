@@ -1,26 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <title>统计查询</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Include Tailwind CSS -->
+    <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Include Font Awesome -->
+    <!-- 引入 Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <!-- Include Chart.js -->
+    <!-- 引入 Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- 引入 Luxon 日期库 -->
     <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
     <!-- 引入 Chart.js 的 Luxon 适配器 -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
     <style>
-        /* Modal styles */
+        /* 模态框样式 */
         .modal {
             display: none;
         }
         .modal-active {
             display: block;
+        }
+        /* 隐藏内容的样式 */
+        .hidden {
+            display: none;
         }
     </style>
     <script>
@@ -34,11 +38,34 @@
             submenu.classList.toggle('hidden');
         }
 
-        // Load Employee Statistics
+        // 切换统计模块的显示
+        function showStatistics(moduleId, button) {
+            // 隐藏所有统计模块
+            const modules = document.querySelectorAll('.statistics-module');
+            modules.forEach(module => {
+                module.classList.add('hidden');
+            });
+
+            // 移除所有按钮的激活状态
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-blue-500', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-800');
+            });
+
+            // 显示选中的统计模块
+            document.getElementById(moduleId).classList.remove('hidden');
+
+            // 激活选中的按钮
+            button.classList.remove('bg-gray-200', 'text-gray-800');
+            button.classList.add('bg-blue-500', 'text-white');
+        }
+
+        // 加载员工统计数据
         async function loadEmployeeStatistics() {
             try {
                 const response = await fetch('/get_employee_statistics');
-                if (!response.ok) throw new Error('Network response was not ok');
+                if (!response.ok) throw new Error('网络响应不正常');
                 const data = await response.json();
                 const tableBody = document.getElementById('employeeStatisticsTable');
                 tableBody.innerHTML = '';
@@ -65,7 +92,7 @@
                 document.getElementById('employeeCount').innerText = data.length;
                 document.getElementById('averageSalary').innerText = (totalSalary / data.length).toFixed(2);
 
-                // Create a bar chart for employee salaries
+                // 创建员工工资的柱状图
                 const ctx = document.getElementById('employeeSalaryChart').getContext('2d');
                 new Chart(ctx, {
                     type: 'bar',
@@ -93,15 +120,15 @@
                 });
 
             } catch (error) {
-                console.error('Error loading employee statistics:', error);
+                console.error('加载员工统计数据时出错:', error);
             }
         }
 
-        // Load Good Statistics
+        // 加载商品统计数据
         async function loadGoodStatistics() {
             try {
                 const response = await fetch('/get_good_statistics');
-                if (!response.ok) throw new Error('Network response was not ok');
+                if (!response.ok) throw new Error('网络响应不正常');
                 const data = await response.json();
                 const tableBody = document.getElementById('goodStatisticsTable');
                 tableBody.innerHTML = '';
@@ -124,7 +151,7 @@
                 });
                 document.getElementById('goodCount').innerText = data.length;
 
-                // Create a pie chart for goods
+                // 创建商品单价的饼图
                 const ctx = document.getElementById('goodPriceChart').getContext('2d');
                 new Chart(ctx, {
                     type: 'pie',
@@ -149,15 +176,15 @@
                 });
 
             } catch (error) {
-                console.error('Error loading good statistics:', error);
+                console.error('加载商品统计数据时出错:', error);
             }
         }
 
-        // Load Purchase Main Statistics
+        // 加载采购主表统计数据
         async function loadPurchaseMainStatistics() {
             try {
                 const response = await fetch(`/get_purchase_statistics?timestamp=${new Date().getTime()}`);
-                if (!response.ok) throw new Error('Network response was not ok');
+                if (!response.ok) throw new Error('网络响应不正常');
                 const data = await response.json();
 
                 const tableBody = document.getElementById('purchaseMainStatisticsTable');
@@ -182,9 +209,6 @@
                     dataPoints.push({ x: date.toISO(), y: amount });
                 });
                 document.getElementById('purchaseMainCount').innerText = data.main.length;
-
-                // 调试信息
-                console.log('Data points for chart:', dataPoints);
 
                 // 创建采购总价随时间变化的折线图
                 const ctx = document.getElementById('purchaseMainChart').getContext('2d');
@@ -222,16 +246,15 @@
                 });
 
             } catch (error) {
-                console.error('Error loading purchase main statistics:', error);
+                console.error('加载采购主表统计数据时出错:', error);
             }
         }
 
-
-        // Load Purchase Detail Statistics
+        // 加载采购明细表统计数据
         async function loadPurchaseDetailStatistics() {
             try {
                 const response = await fetch(`/get_purchase_statistics?timestamp=${new Date().getTime()}`);
-                if (!response.ok) throw new Error('Network response was not ok');
+                if (!response.ok) throw new Error('网络响应不正常');
                 const data = await response.json();
                 const tableBody = document.getElementById('purchaseDetailStatisticsTable');
                 tableBody.innerHTML = '';
@@ -253,7 +276,7 @@
                 });
                 document.getElementById('purchaseDetailCount').innerText = data.detail.length;
 
-                // Create a bar chart for purchase detail totals
+                // 创建采购明细总价的柱状图
                 const ctx = document.getElementById('purchaseDetailChart').getContext('2d');
                 new Chart(ctx, {
                     type: 'bar',
@@ -281,23 +304,12 @@
                 });
 
             } catch (error) {
-                console.error('Error loading purchase detail statistics:', error);
+                console.error('加载采购明细表统计数据时出错:', error);
             }
         }
 
         // Fetch user info and update display
         document.addEventListener('DOMContentLoaded', function () {
-            // 检查是否有闪存消息
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        if ('{{ category }}' === 'error') {
-                            showToast('{{ message }}');
-                        }
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
             // 获取用户信息
             fetch('/get_user_info')
                 .then(response => {
@@ -312,8 +324,9 @@
                     if (data.username) {
                         document.getElementById('user-nickname').textContent = data.username;
                         const userIcon = document.getElementById('user-icon');
+
                         // 根据角色更新图标
-                        if (data.role === 'superadmin') {
+                        if (data.role === 'Admin') {
                             userIcon.className = 'fas fa-user-shield text-2xl';
                         } else if (data.role === 'warehouse') {
                             userIcon.className = 'fas fa-warehouse text-2xl';
@@ -322,6 +335,15 @@
                         } else {
                             userIcon.className = 'fas fa-user text-2xl';
                         }
+
+                        // 控制侧边栏显示项目
+                        const sidebarItems = document.querySelectorAll('#sidebar nav ul li');
+                        sidebarItems.forEach(item => {
+                            const itemRole = item.dataset.role;
+                            if (itemRole && !itemRole.split(',').includes(data.role)) {
+                                item.classList.add('hidden');
+                            }
+                        });
                     }
                 })
                 .catch(error => {
@@ -329,22 +351,6 @@
                     // 出错时重定向到登录页面
                     window.location.href = '/login';
                 });
-
-            // 切换登出按钮的显示和隐藏
-            document.getElementById('user-info').addEventListener('click', function (event) {
-                event.stopPropagation(); // 阻止事件冒泡
-                const logoutButton = document.getElementById('logout-button');
-                logoutButton.classList.toggle('hidden');
-            });
-
-            // 点击页面其他地方时隐藏登出按钮
-            document.addEventListener('click', function(event) {
-                const userInfo = document.getElementById('user-info');
-                const logoutButton = document.getElementById('logout-button');
-                if (!userInfo.contains(event.target) && !logoutButton.contains(event.target)) {
-                    logoutButton.classList.add('hidden');
-                }
-            });
         });
 
         // 处理登出操作
@@ -354,27 +360,26 @@
             }
         }
 
-        window.onload = () => {
-            loadEmployeeStatistics();
-            loadGoodStatistics();
-            loadPurchaseMainStatistics();
-            loadPurchaseDetailStatistics();
-
-            // 添加页面焦点事件监听器
-            window.addEventListener('focus', () => {
-                loadPurchaseMainStatistics();
-            });
-        };
+        // 显示 Toast 通知
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
     </script>
 </head>
 <body class="flex h-screen overflow-hidden">
-    <!-- User Info Display -->
+    <!-- 用户信息显示 -->
     <div id="user-info" class="fixed top-4 right-4 z-20 flex items-center space-x-2 bg-white p-2 rounded-lg shadow-lg cursor-pointer">
         <i id="user-icon" class="fas fa-user text-2xl"></i>
         <span id="user-nickname" class="text-lg font-bold text-gray-700">User</span>
     </div>
 
-    <!-- Logout Button -->
+    <!-- 登出按钮 -->
     <div id="logout-button" class="fixed top-16 right-4 z-20 bg-white p-2 rounded-lg shadow-lg hidden">
         <button onclick="logout()" class="flex items-center text-red-600 font-semibold hover:text-red-800">
             <i class="fas fa-sign-out-alt mr-2"></i>登出
@@ -391,22 +396,22 @@
         <h1 class="text-center text-2xl font-bold mb-8">导航栏</h1>
         <nav>
             <ul>
-                <li class="mb-4">
+                <li class="mb-4" data-role="Admin,CustomerManager">
                     <a href="/customer_management" class="flex items-center bg-green-400 text-black p-2 rounded-full justify-center">
                         <i class="fas fa-users mr-2"></i>客户管理
                     </a>
                 </li>
-                <li class="mb-4">
+                <li class="mb-4" data-role="Admin">
                     <a href="/employee_management" class="flex items-center bg-blue-400 text-black p-2 rounded-full justify-center">
                         <i class="fas fa-user-tie mr-2"></i>员工管理
                     </a>
                 </li>
-                <li class="mb-4">
+                <li class="mb-4" data-role="Admin,Warehouse">
                     <a href="/good_management" class="flex items-center bg-yellow-400 text-black p-2 rounded-full justify-center">
                         <i class="fas fa-box-open mr-2"></i>商品管理
                     </a>
                 </li>
-                <li class="mb-4">
+                <li class="mb-4" data-role="Warehouse">
                     <button onclick="toggleSubmenu()" class="w-full text-left flex items-center bg-red-400 text-black p-2 rounded-full justify-center">
                         <i class="fas fa-shopping-cart mr-2"></i>采购管理
                     </button>
@@ -423,7 +428,7 @@
                         </li>
                     </ul>
                 </li>
-                <li class="mb-4">
+                <li class="mb-4" data-role="Admin,Warehouse,Guest">
                     <a href="/statistics" class="flex items-center bg-purple-400 text-black p-2 rounded-full justify-center">
                         <i class="fas fa-chart-bar mr-2"></i>统计查询
                     </a>
@@ -432,124 +437,133 @@
         </nav>
     </aside>
 
-    <!-- Main Content -->
+    <!-- 主内容区域 -->
     <main id="main-content" class="flex-1 overflow-auto p-4 ml-0 md:ml-64 transition-all duration-300">
-        <!-- 放置在合适的位置 -->
-        <button onclick="loadPurchaseMainStatistics()" class="bg-blue-500 text-white px-4 py-2 rounded mb-4">
-            刷新数据
-        </button>
-        <button onclick="toggleSidebar()" class="fixed top-4 left-4 text-white bg-blue-500 rounded-full p-3 z-40 md:hidden">☰</button>
+        <!-- 添加导航按钮 -->
+        <div class="flex space-x-4 mb-6">
+            <button onclick="showStatistics('employeeStatistics', this)" class="tab-button px-4 py-2 bg-gray-200 text-gray-800 rounded">员工信息统计</button>
+            <button onclick="showStatistics('goodStatistics', this)" class="tab-button px-4 py-2 bg-gray-200 text-gray-800 rounded">商品信息统计</button>
+            <button onclick="showStatistics('purchaseMainStatistics', this)" class="tab-button px-4 py-2 bg-gray-200 text-gray-800 rounded">采购主表统计</button>
+            <button onclick="showStatistics('purchaseDetailStatistics', this)" class="tab-button px-4 py-2 bg-gray-200 text-gray-800 rounded">采购明细表统计</button>
+        </div>
+
         <div class="container mx-auto">
-            <h2 class="text-2xl font-bold mb-4">统计查询</h2>
-
-            <!-- Employee Statistics -->
-            <h3 class="text-xl font-semibold mb-4">员工信息统计</h3>
-            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                <div class="flex flex-col md:flex-row justify-between mb-4">
-                    <div class="mb-2 md:mb-0">员工总数: <span id="employeeCount">0</span></div>
-                    <div>平均工资: <span id="averageSalary">0.00</span></div>
-                </div>
-                <!-- Chart for Employee Salaries -->
-                <canvas id="employeeSalaryChart" class="mb-6"></canvas>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工编号</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工姓名</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工密码</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工级别</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工电话</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工工资</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">备注</th>
-                            </tr>
-                        </thead>
-                        <tbody id="employeeStatisticsTable" class="bg-white divide-y divide-gray-200">
-                            <!-- Employee statistics rows will be dynamically loaded -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Good Statistics -->
-            <h3 class="text-xl font-semibold mb-4">商品信息统计</h3>
-            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                <div class="flex flex-col md:flex-row justify-between mb-4">
-                    <div class="mb-2 md:mb-0">商品总数: <span id="goodCount">0</span></div>
-                </div>
-                <!-- Chart for Good Prices -->
-                <canvas id="goodPriceChart" class="mb-6"></canvas>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品编号</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品名称</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品单价</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">供应商编号</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品简介</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">备注</th>
-                            </tr>
-                        </thead>
-                        <tbody id="goodStatisticsTable" class="bg-white divide-y divide-gray-200">
-                            <!-- Good statistics rows will be dynamically loaded -->
-                        </tbody>
-                    </table>
+            <!-- 员工信息统计模块 -->
+            <div id="employeeStatistics" class="statistics-module">
+                <h2 class="text-2xl font-bold mb-4">员工信息统计</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <div class="flex flex-col md:flex-row justify-between mb-4">
+                        <div class="mb-2 md:mb-0">员工总数: <span id="employeeCount">0</span></div>
+                        <div>平均工资: <span id="averageSalary">0.00</span></div>
+                    </div>
+                    <!-- 员工工资的柱状图 -->
+                    <canvas id="employeeSalaryChart" class="mb-6"></canvas>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工编号</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工姓名</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工密码</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工级别</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工电话</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工工资</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">备注</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeeStatisticsTable" class="bg-white divide-y divide-gray-200">
+                                <!-- 员工统计数据将动态加载 -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <!-- Purchase Main Statistics -->
-            <h3 class="text-xl font-semibold mb-4">采购主表统计</h3>
-            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                <div class="flex flex-col md:flex-row justify-between mb-4">
-                    <div class="mb-2 md:mb-0">采购清单总数: <span id="purchaseMainCount">0</span></div>
-                </div>
-                <!-- Chart for Purchase Main Totals -->
-                <canvas id="purchaseMainChart" class="mb-6"></canvas>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购清单号</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工编号</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购数量</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购总价</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购时间</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">备注</th>
-                            </tr>
-                        </thead>
-                        <tbody id="purchaseMainStatisticsTable" class="bg-white divide-y divide-gray-200">
-                            <!-- Purchase main statistics rows will be dynamically loaded -->
-                        </tbody>
-                    </table>
+            <!-- 商品信息统计模块 -->
+            <div id="goodStatistics" class="statistics-module hidden">
+                <h2 class="text-2xl font-bold mb-4">商品信息统计</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <div class="flex flex-col md:flex-row justify-between mb-4">
+                        <div class="mb-2 md:mb-0">商品总数: <span id="goodCount">0</span></div>
+                    </div>
+                    <!-- 商品单价的饼图 -->
+                    <canvas id="goodPriceChart" class="mb-6"></canvas>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品编号</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品名称</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品单价</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">供应商编号</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品简介</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">备注</th>
+                                </tr>
+                            </thead>
+                            <tbody id="goodStatisticsTable" class="bg-white divide-y divide-gray-200">
+                                <!-- 商品统计数据将动态加载 -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <!-- Purchase Detail Statistics -->
-            <h3 class="text-xl font-semibold mb-4">采购明细表统计</h3>
-            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                <div class="flex flex-col md:flex-row justify-between mb-4">
-                    <div class="mb-2 md:mb-0">采购明细总数: <span id="purchaseDetailCount">0</span></div>
+            <!-- 采购主表统计模块 -->
+            <div id="purchaseMainStatistics" class="statistics-module hidden">
+                <h2 class="text-2xl font-bold mb-4">采购主表统计</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <div class="flex flex-col md:flex-row justify-between mb-4">
+                        <div class="mb-2 md:mb-0">采购清单总数: <span id="purchaseMainCount">0</span></div>
+                    </div>
+                    <!-- 采购总价随时间变化的折线图 -->
+                    <canvas id="purchaseMainChart" class="mb-6"></canvas>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购清单号</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">员工编号</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购数量</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购总价</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购时间</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">备注</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purchaseMainStatisticsTable" class="bg-white divide-y divide-gray-200">
+                                <!-- 采购主表统计数据将动态加载 -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <!-- Chart for Purchase Detail Totals -->
-                <canvas id="purchaseDetailChart" class="mb-6"></canvas>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购明细号</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购清单号</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品编号</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购数量</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品单价</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品总价</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">备注</th>
-                            </tr>
-                        </thead>
-                        <tbody id="purchaseDetailStatisticsTable" class="bg-white divide-y divide-gray-200">
-                            <!-- Purchase detail statistics rows will be dynamically loaded -->
-                        </tbody>
-                    </table>
+            </div>
+
+            <!-- 采购明细表统计模块 -->
+            <div id="purchaseDetailStatistics" class="statistics-module hidden">
+                <h2 class="text-2xl font-bold mb-4">采购明细表统计</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <div class="flex flex-col md:flex-row justify-between mb-4">
+                        <div class="mb-2 md:mb-0">采购明细总数: <span id="purchaseDetailCount">0</span></div>
+                    </div>
+                    <!-- 采购明细总价的柱状图 -->
+                    <canvas id="purchaseDetailChart" class="mb-6"></canvas>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购明细号</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购清单号</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品编号</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">采购数量</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品单价</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品总价</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">备注</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purchaseDetailStatisticsTable" class="bg-white divide-y divide-gray-200">
+                                <!-- 采购明细统计数据将动态加载 -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
