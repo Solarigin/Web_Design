@@ -11,7 +11,7 @@
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 14/10/2024 08:33:14
+ Date: 15/10/2024 11:09:42
 */
 
 SET NAMES utf8mb4;
@@ -28,7 +28,7 @@ CREATE TABLE `admin`  (
   `role` enum('Admin','Warehouse','CustomerManager') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `username`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of admin
@@ -93,7 +93,9 @@ CREATE TABLE `tb_employee`  (
   INDEX `Eid_8`(`Eid` ASC) USING BTREE,
   INDEX `Eid_9`(`Eid` ASC) USING BTREE,
   INDEX `Eid_10`(`Eid` ASC) USING BTREE,
-  INDEX `Eid_11`(`Eid` ASC) USING BTREE
+  INDEX `Eid_11`(`Eid` ASC) USING BTREE,
+  INDEX `Eid_12`(`Eid` ASC) USING BTREE,
+  INDEX `Eid_13`(`Eid` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -144,13 +146,14 @@ INSERT INTO `tb_good` VALUES ('G008', 'Good 8', 80, 'C008', 'Introduction 8', 'N
 INSERT INTO `tb_good` VALUES ('G009', 'Good 9', 90, 'C009', 'Introduction 9', 'Note 9');
 INSERT INTO `tb_good` VALUES ('G010', 'Good 10', 100, 'C010', 'Introduction 10', 'Note 10');
 INSERT INTO `tb_good` VALUES ('G011', 'iphone 16 pro max', 999, 'C010', 'New iphone', 'very expensive');
+INSERT INTO `tb_good` VALUES ('G012', 'XXXX', 1, 'C001', 'n', 'n');
 
 -- ----------------------------
 -- Table structure for tb_pay_detail
 -- ----------------------------
 DROP TABLE IF EXISTS `tb_pay_detail`;
 CREATE TABLE `tb_pay_detail`  (
-  `PDid` int(15) NOT NULL,
+  `PDid` int(15) NOT NULL AUTO_INCREMENT,
   `Pid` int(15) NOT NULL,
   `Gid` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `Pcount` int(11) NOT NULL,
@@ -176,18 +179,18 @@ INSERT INTO `tb_pay_detail` VALUES (6, 6, 'G006', 60, 60, 3600, 'Note 6');
 INSERT INTO `tb_pay_detail` VALUES (7, 7, 'G007', 70, 70, 4900, 'Note 7');
 INSERT INTO `tb_pay_detail` VALUES (8, 8, 'G008', 80, 80, 6400, 'Note 8');
 INSERT INTO `tb_pay_detail` VALUES (9, 9, 'G009', 90, 90, 8100, 'Note 9');
-INSERT INTO `tb_pay_detail` VALUES (10, 10, 'G010', 100, 100, 10000, 'Note 10');
+INSERT INTO `tb_pay_detail` VALUES (10, 10, 'G010', 101, 100, 10100, 'Note 10\nX');
 
 -- ----------------------------
 -- Table structure for tb_pay_main
 -- ----------------------------
 DROP TABLE IF EXISTS `tb_pay_main`;
 CREATE TABLE `tb_pay_main`  (
-  `Pid` int(11) NOT NULL,
+  `Pid` int(11) NOT NULL AUTO_INCREMENT,
   `Eid` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `Pcount` int(11) NOT NULL,
   `Ptotal` float NOT NULL,
-  `Pdate` varchar(8) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `Pdate` varchar(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `other` varchar(30) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
   PRIMARY KEY (`Pid`) USING BTREE,
   INDEX `Eid`(`Eid` ASC) USING BTREE,
@@ -196,21 +199,22 @@ CREATE TABLE `tb_pay_main`  (
   INDEX `Pid_3`(`Pid` ASC) USING BTREE,
   INDEX `Pid_4`(`Pid` ASC) USING BTREE,
   CONSTRAINT `tb_pay_main` FOREIGN KEY (`Eid`) REFERENCES `tb_employee` (`eid`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of tb_pay_main
 -- ----------------------------
-INSERT INTO `tb_pay_main` VALUES (1, 'E001', 10, 100, '20230101', 'Note 1');
-INSERT INTO `tb_pay_main` VALUES (2, 'E002', 20, 400, '20230102', 'Note 2');
-INSERT INTO `tb_pay_main` VALUES (3, 'E003', 30, 900, '20230103', 'Note 3');
-INSERT INTO `tb_pay_main` VALUES (4, 'E004', 40, 1600, '20230104', 'Note 4');
-INSERT INTO `tb_pay_main` VALUES (5, 'E005', 50, 2500, '20230105', 'Note 5');
-INSERT INTO `tb_pay_main` VALUES (6, 'E006', 60, 3600, '20230106', 'Note 6');
-INSERT INTO `tb_pay_main` VALUES (7, 'E007', 70, 4900, '20230107', 'Note 7');
-INSERT INTO `tb_pay_main` VALUES (8, 'E008', 80, 6400, '20230108', 'Note 8');
-INSERT INTO `tb_pay_main` VALUES (9, 'E009', 90, 8100, '20230109', 'Note 9');
-INSERT INTO `tb_pay_main` VALUES (10, 'E010', 100, 10000, '20230110', 'Note 10');
+INSERT INTO `tb_pay_main` VALUES (1, 'E001', 10, 100, '2024-10-04', 'Note 1');
+INSERT INTO `tb_pay_main` VALUES (2, 'E002', 20, 400, '2024-10-05', 'Note 2');
+INSERT INTO `tb_pay_main` VALUES (3, 'E003', 30, 900, '2024-10-06', 'Note 3');
+INSERT INTO `tb_pay_main` VALUES (4, 'E004', 40, 1600, '2024-10-07', 'Note 4');
+INSERT INTO `tb_pay_main` VALUES (5, 'E005', 50, 2500, '2024-10-08', 'Note 5');
+INSERT INTO `tb_pay_main` VALUES (6, 'E006', 60, 3600, '2024-10-09', 'Note 6');
+INSERT INTO `tb_pay_main` VALUES (7, 'E007', 70, 4900, '2024-10-10', 'Note 7');
+INSERT INTO `tb_pay_main` VALUES (8, 'E008', 80, 6400, '2024-10-11', 'Note 8');
+INSERT INTO `tb_pay_main` VALUES (9, 'E009', 90, 8100, '2024-10-12', 'Note 9');
+INSERT INTO `tb_pay_main` VALUES (10, 'E010', 101, 10100, '2024-10-13', 'Note 10');
+INSERT INTO `tb_pay_main` VALUES (11, 'E001', 0, 0, '2024-10-14', 'Note 11');
 
 -- ----------------------------
 -- Procedure structure for AddCustomer
