@@ -5,13 +5,13 @@
  Source Server Type    : MySQL
  Source Server Version : 80013
  Source Host           : localhost:3306
- Source Schema         : supermarket
+ Source Schema         : nsm
 
  Target Server Type    : MySQL
  Target Server Version : 80013
  File Encoding         : 65001
 
- Date: 15/10/2024 11:09:42
+ Date: 16/10/2024 15:12:02
 */
 
 SET NAMES utf8mb4;
@@ -28,14 +28,17 @@ CREATE TABLE `admin`  (
   `role` enum('Admin','Warehouse','CustomerManager') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `username`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of admin
 -- ----------------------------
-INSERT INTO `admin` VALUES (1, 'admin', 'password123', 'Admin');
-INSERT INTO `admin` VALUES (2, 'warehouse_user', 'password456', 'Warehouse');
-INSERT INTO `admin` VALUES (3, 'customer_user', 'password789', 'CustomerManager');
+INSERT INTO `admin` VALUES (1, 'admin', 'scrypt:32768:8:1$PHQ2eTEt8KIZMtn7$855fcc4ad39178897b55697539b6a65a5a088a55c845edf2c1388ef9d635c5f98f88f7857f45db2ccc721df9160e7ea9ef8324c14cb1971e8e794f0e8132b0ac\r\n', 'Admin');
+INSERT INTO `admin` VALUES (2, 'warehouse_user', 'scrypt:32768:8:1$jcUp5HYFVqLwMV7b$665227bc345b8ce579596448559ba5c10dedc7a526af110aaba389a8896ad192d8721008b5972fd9d26526bf7d82451997af5e461d0b561f175b76e72be7cc56\r\n', 'Warehouse');
+INSERT INTO `admin` VALUES (3, 'customer_user', 'scrypt:32768:8:1$JTvPMQ1eheobMzce$def68392f6e11a4cde48c0a2e5da167717970923da7a849eef7c348f7544ca827593764e83942abec30954d1aeac4398108f0f200f5dac3297f9d3efc8aaa269\r\n', 'CustomerManager');
+INSERT INTO `admin` VALUES (4, 'Solarigin', 'scrypt:32768:8:1$tFMHgaYJtwBomwOL$a10e30367bd10bc75d682fe9410b4a2e0b252c6e824d878ce9f817474e1b056c7f7249725991cb8f58879e8cf38af5f84dd0759b27987a63b162908790accf4c', 'CustomerManager');
+INSERT INTO `admin` VALUES (5, 'Larigin', 'scrypt:32768:8:1$QIwOkm74x4lGl6aa$ebea7e12c71ee04cfe1c0f40ab7b41e8fba334672d2c6ad79e917fdd9bde83d73dea55ab4ab12b109849ed98d737c67726d78a63eac9c51be14cbdede71c8738', 'CustomerManager');
+INSERT INTO `admin` VALUES (6, 'A001', 'scrypt:32768:8:1$Lvn1ywGq4gQRaFsH$eafbaa96e7760f9fcff4c2e14afe289d96d820431708d3c0863f56ee94269f16e8507f2b508e1d31af14934adb6e777fdec1b6f81e1312cc82be44e820b876a5', 'Admin');
 
 -- ----------------------------
 -- Table structure for tb_customer
@@ -52,23 +55,23 @@ CREATE TABLE `tb_customer`  (
   `CtelPhone` varchar(11) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `other` varchar(30) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
   PRIMARY KEY (`Cid`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_customer
 -- ----------------------------
-INSERT INTO `tb_customer` VALUES ('C001', 'Company A', 'CA', '9234 Elm St', '1234567890', 'contact@companya.com', 'John Doe', '0987654321', 'Note 1');
-INSERT INTO `tb_customer` VALUES ('C002', 'Company B', 'CB', '5678 Oak St', '1234567891', 'contact@companyb.com', 'Jane Smith', '0987654322', 'Note 2');
-INSERT INTO `tb_customer` VALUES ('C003', 'Company C', 'CC', '9101 Pine St', '1234567892', 'contact@companyc.com', 'Michael Johnson', '0987654323', 'Note 3');
-INSERT INTO `tb_customer` VALUES ('C004', 'Company D', 'CD', '1213 Maple St', '1234567893', 'contact@companyd.com', 'Emily Davis', '0987654324', 'Note 4');
-INSERT INTO `tb_customer` VALUES ('C005', 'Company E', 'CE', '1415 Birch St', '1234567894', 'contact@companye.com', 'Chris Lee', '0987654325', 'Note 5');
-INSERT INTO `tb_customer` VALUES ('C006', 'Company F', 'CF', '1617 Cedar St', '1234567895', 'contact@companyf.com', 'Patricia Brown', '0987654326', 'Note 6');
-INSERT INTO `tb_customer` VALUES ('C007', 'Company G', 'CG', '1819 Walnut St', '1234567896', 'contact@companyg.com', 'Linda White', '0987654327', 'Note 7');
-INSERT INTO `tb_customer` VALUES ('C008', 'Company H', 'CH', '2021 Ash St', '1234567897', 'contact@companyh.com', 'Robert Martin', '0987654328', 'Note 8');
-INSERT INTO `tb_customer` VALUES ('C009', 'Company I', 'CI', '2223 Spruce St', '1234567898', 'contact@companyi.com', 'Barbara Clark', '0987654329', 'Note 9');
-INSERT INTO `tb_customer` VALUES ('C010', 'Company J', 'CJ', '2425 Chestnut St', '1234567899', 'contact@companyj.com', 'James Lewis', '0987654330', 'Note 10');
-INSERT INTO `tb_customer` VALUES ('C011', 'XiaoLi', 'DY', 'aaaa', '44444444444', 'FuRong@qq.com', 'Rick5Offical', '45454', 'ZZZ');
-INSERT INTO `tb_customer` VALUES ('C012', 'XXX', 'XX', 'XXX', '1425424', 'FuRong@qq.com', 'John Doe', '914341999', 'XXXX');
+INSERT INTO `tb_customer` VALUES ('C001', 'Acme Corporation', 'ACME', '123 Industrial Way', '555-1234', 'contact@acme.com', 'Alice Johnson', '555-5678', 'Preferred customer');
+INSERT INTO `tb_customer` VALUES ('C002', 'Globex Corporation', 'Globex', '456 Commerce Blvd', '555-2345', 'sales@globex.com', 'Bob Smith', '555-6789', 'Bulk buyer');
+INSERT INTO `tb_customer` VALUES ('C003', 'Initech', 'INTECH', '789 Innovation Dr', '555-3456', 'support@initech.com', 'Carol Williams', '555-7890', 'Requires custom solutions');
+INSERT INTO `tb_customer` VALUES ('C004', 'Umbrella Corp', 'Umbrella', '1010 Rainy St', '555-4567', 'info@umbrella.com', 'David Brown', '555-8901', 'High-priority client');
+INSERT INTO `tb_customer` VALUES ('C005', 'Wayne Enterprises', 'Wayne', '2020 Gotham Rd', '555-5678', 'contact@wayne.com', 'Eve Davis', '555-9012', 'VIP customer');
+INSERT INTO `tb_customer` VALUES ('C006', 'Stark Industries', 'Stark', '3030 Iron Ave', '555-6789', 'tech@stark.com', 'Frank Miller', '555-0123', 'Technology partner');
+INSERT INTO `tb_customer` VALUES ('C007', 'Oscorp', 'Oscorp', '4040 Spider Ln', '555-7890', 'research@oscorp.com', 'Grace Lee', '555-1234', 'Research collaboration');
+INSERT INTO `tb_customer` VALUES ('C008', 'LexCorp', 'Lex', '5050 Krypton Dr', '555-8901', 'ceo@lexcorp.com', 'Henry Clark', '555-2345', 'Strategic partner');
+INSERT INTO `tb_customer` VALUES ('C009', 'Black Mesa', 'Black Mesa', '6060 Freeman St', '555-9012', 'science@blackmesa.com', 'Isabella Moore', '555-3456', 'Long-term contract');
+INSERT INTO `tb_customer` VALUES ('C010', 'Aperture Science', 'Aperture', '7070 Portal Ave', '555-0123', 'test@aperture.com', 'Jack Wilson', '555-4567', 'Testing services');
+INSERT INTO `tb_customer` VALUES ('C011', 'Cyberdyne Systems', 'Cyberdyne', '8080 Skynet Blvd', '555-1234', 'ai@cyberdyne.com', 'Karen Taylor', '555-5678', 'AI development');
+INSERT INTO `tb_customer` VALUES ('C012', 'Tyrell Corporation', 'Tyrell', '9090 Nexus Way', '555-2345', 'replicants@tyrell.com', 'Leo Anderson', '555-6789', 'Advanced robotics');
 
 -- ----------------------------
 -- Table structure for tb_employee
@@ -77,7 +80,7 @@ DROP TABLE IF EXISTS `tb_employee`;
 CREATE TABLE `tb_employee`  (
   `Eid` varchar(10) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `EName` varchar(30) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `EPas` varchar(30) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `EPas` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `Elevel` varchar(2) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `EtelPhone` varchar(11) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `ESalary` int(11) NULL DEFAULT NULL,
@@ -96,21 +99,21 @@ CREATE TABLE `tb_employee`  (
   INDEX `Eid_11`(`Eid` ASC) USING BTREE,
   INDEX `Eid_12`(`Eid` ASC) USING BTREE,
   INDEX `Eid_13`(`Eid` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_employee
 -- ----------------------------
-INSERT INTO `tb_employee` VALUES ('E001', 'Alice', 'pass1', '1', '1234567890', 50000, 'Note 1');
-INSERT INTO `tb_employee` VALUES ('E002', 'Bob', 'pass2', '2', '1234567891', 52000, 'Note 2');
-INSERT INTO `tb_employee` VALUES ('E003', 'Charlie', 'pass3', '1', '1234567892', 51000, 'Note 3');
-INSERT INTO `tb_employee` VALUES ('E004', 'David', 'pass4', '3', '1234567893', 53000, 'Note 4');
-INSERT INTO `tb_employee` VALUES ('E005', 'Eve', 'pass5', '2', '1234567894', 54000, 'Note 5');
-INSERT INTO `tb_employee` VALUES ('E006', 'Frank', 'pass6', '1', '1234567895', 50000, 'Note 6');
-INSERT INTO `tb_employee` VALUES ('E007', 'Grace', 'pass7', '3', '1234567896', 55000, 'Note 7');
-INSERT INTO `tb_employee` VALUES ('E008', 'Hank', 'pass8', '2', '1234567897', 52000, 'Note 8');
-INSERT INTO `tb_employee` VALUES ('E009', 'Ivy', 'pass9', '1', '1234567898', 51000, 'Note 9');
-INSERT INTO `tb_employee` VALUES ('E010', 'Jack', 'pass10', '3', '1234567899', 53000, 'Note 10');
+INSERT INTO `tb_employee` VALUES ('E001', 'Alex Turner', '1136b708cc76736a97ca599a44b825d3', '1', '555-0001', 75000, 'Operations Manager');
+INSERT INTO `tb_employee` VALUES ('E002', 'Jordan Lee', '6c09b57c9370308bd4436c9ae6249432', '2', '555-0002', 55000, 'Assistant Manager');
+INSERT INTO `tb_employee` VALUES ('E003', 'Taylor Kim', '014303b5594d7effd522bbf6624008c6', '1', '555-0003', 50000, 'Sales Lead');
+INSERT INTO `tb_employee` VALUES ('E004', 'Morgan Chen', 'bc45ce786bed9cf14eba3072b9cc0d2d', '3', '555-0004', 48000, 'Customer Support');
+INSERT INTO `tb_employee` VALUES ('E005', 'Casey Patel', 'be885184d6dd523770dec97cc6b244d7', '2', '555-0005', 52000, 'Marketing Specialist');
+INSERT INTO `tb_employee` VALUES ('E006', 'Riley Nguyen', '9b2a60a6e6da469f82d3446635111449', '1', '555-0006', 51000, 'Financial Analyst');
+INSERT INTO `tb_employee` VALUES ('E007', 'Jamie Rivera', 'd5fd234f1ecdb3de79f87c19ce492125', '3', '555-0007', 50000, 'HR Coordinator');
+INSERT INTO `tb_employee` VALUES ('E008', 'Drew Wilson', '4443ec7c1fb5b896d6faeabcaed40201', '2', '555-0008', 53000, 'Product Manager');
+INSERT INTO `tb_employee` VALUES ('E009', 'Parker Gomez', 'd4798cc27c100c86feebf74058b1066d', '1', '555-0009', 49500, 'Supply Chain Manager');
+INSERT INTO `tb_employee` VALUES ('E010', 'Cameron Scott', 'cc3fd382fd517ceb7964f66822d8713c', '3', '555-0010', 48000, 'Quality Assurance');
 
 -- ----------------------------
 -- Table structure for tb_good
@@ -129,8 +132,8 @@ CREATE TABLE `tb_good`  (
   INDEX `Gid_2`(`Gid` ASC) USING BTREE,
   INDEX `Gid_3`(`Gid` ASC) USING BTREE,
   INDEX `Gid_4`(`Gid` ASC) USING BTREE,
-  CONSTRAINT `tb_good` FOREIGN KEY (`Cid`) REFERENCES `tb_customer` (`Cid`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
+  CONSTRAINT `tb_good` FOREIGN KEY (`Cid`) REFERENCES `tb_customer` (`cid`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_good
@@ -165,7 +168,7 @@ CREATE TABLE `tb_pay_detail`  (
   INDEX `Gid`(`Gid` ASC) USING BTREE,
   CONSTRAINT `tb_pay_detail1` FOREIGN KEY (`Pid`) REFERENCES `tb_pay_main` (`pid`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `tb_pay_detail2` FOREIGN KEY (`Gid`) REFERENCES `tb_good` (`gid`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_pay_detail
@@ -199,7 +202,7 @@ CREATE TABLE `tb_pay_main`  (
   INDEX `Pid_3`(`Pid` ASC) USING BTREE,
   INDEX `Pid_4`(`Pid` ASC) USING BTREE,
   CONSTRAINT `tb_pay_main` FOREIGN KEY (`Eid`) REFERENCES `tb_employee` (`eid`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_pay_main
@@ -276,8 +279,8 @@ CREATE PROCEDURE `UpdateCustomer`(IN Cid VARCHAR(10),
     IN CtelPhone VARCHAR(11),
     IN other VARCHAR(30))
 BEGIN
-    UPDATE tb_customer 
-    SET CcompanyName = CcompanyName, 
+    UPDATE tb_customer
+    SET CcompanyName = CcompanyName,
         CcompanySName = CcompanySName,
         CcompanyAddress = CcompanyAddress,
         CcompanyPhone = CcompanyPhone,
@@ -334,6 +337,51 @@ delimiter ;
 -- ----------------------------
 -- Triggers structure for table tb_pay_detail
 -- ----------------------------
+DROP TRIGGER IF EXISTS `before_detail_update_fetchedPrice`;
+delimiter ;;
+CREATE TRIGGER `before_detail_update_fetchedPrice` BEFORE UPDATE ON `tb_pay_detail` FOR EACH ROW BEGIN
+    DECLARE fetched_price FLOAT;
+
+    IF NEW.Pcount < 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '商品总数不能为负数';
+    END IF;
+
+    IF NEW.GPay < 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '商品单价不能为负数';
+    END IF;
+
+    IF NEW.total < 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '总价不能为负数';
+    END IF;
+
+    SELECT GPay INTO fetched_price FROM tb_good WHERE Gid = NEW.Gid;
+
+    IF NEW.GPay != fetched_price THEN
+        SET NEW.GPay = fetched_price;
+    END IF;
+
+    SET NEW.total = NEW.Pcount * NEW.GPay;
+END
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table tb_pay_detail
+-- ----------------------------
+DROP TRIGGER IF EXISTS `after_detail_insert_PtANDPc`;
+delimiter ;;
+CREATE TRIGGER `after_detail_insert_PtANDPc` AFTER INSERT ON `tb_pay_detail` FOR EACH ROW BEGIN
+    UPDATE tb_pay_main
+    SET Ptotal = (SELECT SUM(total) FROM tb_pay_detail WHERE Pid = NEW.Pid),
+        Pcount = (SELECT SUM(Pcount) FROM tb_pay_detail WHERE Pid = NEW.Pid)
+    WHERE Pid = NEW.Pid;
+END
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table tb_pay_detail
+-- ----------------------------
 DROP TRIGGER IF EXISTS `after_detail_update_PtANDPc`;
 delimiter ;;
 CREATE TRIGGER `after_detail_update_PtANDPc` AFTER UPDATE ON `tb_pay_detail` FOR EACH ROW BEGIN
@@ -373,7 +421,7 @@ delimiter ;;
 CREATE TRIGGER `before_detail_insert_fetchedPrice` BEFORE INSERT ON `tb_pay_detail` FOR EACH ROW BEGIN
     -- 声明一个浮点类型的变量，用于存储从tb_good表中获取的商品单价
     DECLARE fetched_price FLOAT;
-    
+
     -- 检查插入的新记录中的Pcount（商品总数）是否为负数，如果是，则抛出一个错误，终止插入操作
     IF NEW.Pcount < 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '商品总数不能为负!';
@@ -399,51 +447,6 @@ CREATE TRIGGER `before_detail_insert_fetchedPrice` BEFORE INSERT ON `tb_pay_deta
 
     -- 计算新插入记录的总价，公式为Pcount乘以GPay，并将其设置到新记录的total字段中
     SET NEW.total = NEW.Pcount * NEW.GPay;
-END
-;;
-delimiter ;
-
--- ----------------------------
--- Triggers structure for table tb_pay_detail
--- ----------------------------
-DROP TRIGGER IF EXISTS `before_detail_update_fetchedPrice`;
-delimiter ;;
-CREATE TRIGGER `before_detail_update_fetchedPrice` BEFORE UPDATE ON `tb_pay_detail` FOR EACH ROW BEGIN
-    DECLARE fetched_price FLOAT;
-    
-    IF NEW.Pcount < 0 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '商品总数不能为负数';
-    END IF;
-
-    IF NEW.GPay < 0 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '商品单价不能为负数';
-    END IF;
-
-    IF NEW.total < 0 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '总价不能为负数';
-    END IF;
-
-    SELECT GPay INTO fetched_price FROM tb_good WHERE Gid = NEW.Gid;
-
-    IF NEW.GPay != fetched_price THEN
-        SET NEW.GPay = fetched_price;
-    END IF;
-
-    SET NEW.total = NEW.Pcount * NEW.GPay;
-END
-;;
-delimiter ;
-
--- ----------------------------
--- Triggers structure for table tb_pay_detail
--- ----------------------------
-DROP TRIGGER IF EXISTS `after_detail_insert_PtANDPc`;
-delimiter ;;
-CREATE TRIGGER `after_detail_insert_PtANDPc` AFTER INSERT ON `tb_pay_detail` FOR EACH ROW BEGIN
-    UPDATE tb_pay_main
-    SET Ptotal = (SELECT SUM(total) FROM tb_pay_detail WHERE Pid = NEW.Pid),
-        Pcount = (SELECT SUM(Pcount) FROM tb_pay_detail WHERE Pid = NEW.Pid)
-    WHERE Pid = NEW.Pid;
 END
 ;;
 delimiter ;
