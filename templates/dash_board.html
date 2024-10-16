@@ -5,7 +5,8 @@
     <title>新主页</title>
     <!-- Include Tailwind CSS and Font Awesome -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- 使用最新版本的 Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Styles -->
     <style>
         .sidebar {
@@ -31,58 +32,23 @@
             display: block;
         }
     </style>
-    <script>
-        // Toggle Sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('main-content');
-            sidebar.classList.toggle('sidebar-hidden');
-            mainContent.classList.toggle('main-content-expanded');
-            mainContent.classList.toggle('main-content-collapsed');
-        }
-
-        // Toggle Submenu
-        function toggleSubmenu() {
-            const submenu = document.getElementById('submenu');
-            submenu.classList.toggle('submenu-expanded');
-        }
-
-        // Function to show toast message
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            const toastMessage = document.getElementById('toast-message');
-            toastMessage.textContent = message;
-            toast.classList.remove('hidden');
-
-            // Automatically hide after 3 seconds
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3000);
-        }
-
-        // Check for flash messages from the server
-        document.addEventListener('DOMContentLoaded', function () {
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        if ('{{ category }}' === 'error') {
-                            showToast('{{ message }}');
-                        }
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        });
-    </script>
 </head>
 <body class="flex h-screen overflow-hidden">
     <!-- User Info Display -->
-    <div id="user-info" class="fixed top-4 right-4 flex items-center space-x-2 bg-white p-2 rounded-lg shadow-lg">
+    <div id="user-info" class="fixed top-4 right-4 z-20 flex items-center space-x-2 bg-white p-2 rounded-lg shadow-lg cursor-pointer">
         <i id="user-icon" class="fas fa-user text-2xl"></i>
         <span id="user-nickname" class="text-lg font-bold text-gray-700">User</span>
     </div>
 
+    <!-- Logout Button -->
+    <div id="logout-button" class="fixed top-16 right-4 z-20 bg-white p-2 rounded-lg shadow-lg hidden">
+        <button onclick="logout()" class="flex items-center text-red-600 font-semibold hover:text-red-800">
+            <i class="fas fa-sign-out-alt mr-2"></i>登出
+        </button>
+    </div>
+
     <!-- Toast 通知 -->
-    <div id="toast" class="fixed top-0 right-0 mt-4 mr-4 bg-red-500 text-white p-3 rounded-lg shadow-lg hidden">
+    <div id="toast" class="fixed top-0 right-0 mt-4 mr-4 z-10 bg-red-500 text-white p-3 rounded-lg shadow-lg hidden">
         <span id="toast-message"></span>
     </div>
 
@@ -137,5 +103,105 @@
         <button onclick="toggleSidebar()" class="fixed top-4 left-4 text-white bg-blue-500 rounded-full p-3 z-10">☰</button>
         <p class="text-xl">请在左侧导航栏选择您想进行的操作</p>
     </main>
+
+    <!-- JavaScript 部分 -->
+    <script>
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            sidebar.classList.toggle('sidebar-hidden');
+            mainContent.classList.toggle('main-content-expanded');
+            mainContent.classList.toggle('main-content-collapsed');
+        }
+
+        // Toggle Submenu
+        function toggleSubmenu() {
+            const submenu = document.getElementById('submenu');
+            submenu.classList.toggle('submenu-expanded');
+        }
+
+        // Function to show toast message
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden');
+
+            // Automatically hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Fetch user info and update display
+        document.addEventListener('DOMContentLoaded', function () {
+            // 检查是否有闪存消息
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        if ('{{ category }}' === 'error') {
+                            showToast('{{ message }}');
+                        }
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            // 获取用户信息
+            fetch('/get_user_info')
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        // 如果未登录，重定向到登录页面
+                        window.location.href = '/login';
+                    }
+                })
+                .then(data => {
+                    if (data.username) {
+                        document.getElementById('user-nickname').textContent = data.username;
+                        const userIcon = document.getElementById('user-icon');
+                        // 根据角色更新图标
+                        if (data.role === 'superadmin') {
+                            userIcon.className = 'fas fa-user-shield text-2xl';
+                        } else if (data.role === 'warehouse') {
+                            userIcon.className = 'fas fa-warehouse text-2xl';
+                        } else if (data.role === 'customer') {
+                            userIcon.className = 'fas fa-user-tie text-2xl';
+                        } else {
+                            userIcon.className = 'fas fa-user text-2xl';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching user info:', error);
+                    // 出错时重定向到登录页面
+                    window.location.href = '/login';
+                });
+
+            // 切换登出按钮的显示和隐藏
+            document.getElementById('user-info').addEventListener('click', function (event) {
+                event.stopPropagation(); // 阻止事件冒泡
+                const logoutButton = document.getElementById('logout-button');
+                logoutButton.classList.toggle('hidden');
+            });
+
+            // 点击页面其他地方时隐藏登出按钮
+            document.addEventListener('click', function(event) {
+                const userInfo = document.getElementById('user-info');
+                const logoutButton = document.getElementById('logout-button');
+                if (!userInfo.contains(event.target) && !logoutButton.contains(event.target)) {
+                    logoutButton.classList.add('hidden');
+                }
+            });
+        });
+
+        // 处理登出操作
+        function logout() {
+            if (confirm('您确定要登出吗？')) {
+                window.location.href = '/logout';
+            }
+        }
+    </script>
 </body>
 </html>

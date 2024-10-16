@@ -3,7 +3,7 @@ db_config = {
     'user': 'root',
     'password': '8935332',
     'host': 'localhost',
-    'database': 'supermarket',
+    'database': 'nsm',
 }
 
 # 删除或注释掉 Redis 配置

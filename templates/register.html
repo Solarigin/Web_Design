@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <!-- Meta and Title -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - 企业资源计划系统</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen relative">
+    <!-- Background Shapes Container -->
+    <div id="background-shapes" class="absolute inset-0 -z-10 overflow-hidden"></div>
+
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <!-- Big Title -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold">欢迎来到企业资源计划系统</h1>
+        </div>
+
+        <!-- Registration Header -->
+        <div class="flex justify-center items-center mb-6">
+            <i class="fas fa-user-plus text-2xl"></i>
+            <h2 class="text-2xl font-bold ml-2">注册</h2>
+        </div>
+
+        <!-- Registration Form -->
+        <form action="/register" method="post" class="space-y-6">
+            <div>
+                <label for="role" class="block text-sm font-medium text-gray-700">请选择您的身份</label>
+                <select id="role" name="role" aria-label="请选择您的身份" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+                    <option value="" disabled selected>请选择您的身份</option>
+                    <option value="Warehouse">仓库管理</option>
+                    <option value="CustomerManager">客户管理</option>
+                    <option value="Guest">游客</option>
+                </select>
+            </div>
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700">通行证</label>
+                <input type="text" id="username" name="username" aria-label="通行证" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">密码</label>
+                <div class="relative">
+                    <input type="password" id="password" name="password" aria-label="密码" minlength="8" required class="mt-1 block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm">
+                    <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 px-3 text-gray-600" aria-label="切换密码可见性">
+                        <i id="password-icon" class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div>
+            <div>
+                <label for="captcha" class="block text-sm font-medium text-gray-700">验证码</label>
+                <div class="mt-1">
+                    <img src="/captcha" alt="captcha" class="w-full max-w-lg mb-2 cursor-pointer" onclick="this.src='/captcha?'+Math.random();">
+                    <input type="text" id="captcha" name="captcha" aria-label="验证码" required class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+                </div>
+                <p class="text-sm text-gray-500 mt-2">点击图片刷新验证码。</p>
+            </div>
+            <!-- Display Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div>
+                        {% for category, message in messages %}
+                            <div class="text-red-600 bg-red-100 border border-red-400 px-4 py-2 rounded mt-2">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Submit Button -->
+            <div>
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                    注册
+                </button>
+            </div>
+
+            <!-- Login Link -->
+            <div class="text-center">
+                <p class="text-sm">已经有账号了？<a href="{{ url_for('auth.login') }}" class="text-indigo-600 hover:text-indigo-800">登录</a></p>
+            </div>
+        </form>
+    </div>
+
+    <!-- JavaScript Section -->
+    <script>
+        // Toggle Password Visibility
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const passwordIcon = document.getElementById('password-icon');
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                passwordIcon.className = "fas fa-eye-slash";
+            } else {
+                passwordInput.type = "password";
+                passwordIcon.className = "fas fa-eye";
+            }
+        }
+
+        // Generate Background Shapes (Optional)
+        document.addEventListener('DOMContentLoaded', function () {
+            generateBackgroundShapes();
+        });
+
+        function generateBackgroundShapes() {
+            // Same function as in login.html
+            // You can copy the function from login.html here if you want the same background effect
+        }
+    </script>
+</body>
+</html>

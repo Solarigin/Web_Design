@@ -37,6 +37,10 @@
             document.getElementById('employeeModalForm').reset();
             // Set form action to add employee
             document.getElementById('employeeModalForm').action = '/add_employee';
+            // Ensure Eid field is editable
+            document.getElementById('modalEid').disabled = false;
+            // Clear hidden Eid value
+            document.getElementById('hiddenEid').value = '';
         }
 
         // Close Modal
@@ -58,7 +62,7 @@
                     row.innerHTML = `
                         <td class="px-4 py-2 whitespace-nowrap">${employee.Eid}</td>
                         <td class="px-4 py-2 whitespace-nowrap">${employee.EName}</td>
-                        <td class="px-4 py-2 whitespace-nowrap">${employee.EPas}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">********</td>
                         <td class="px-4 py-2 whitespace-nowrap">${employee.Elevel}</td>
                         <td class="px-4 py-2 whitespace-nowrap">${employee.EtelPhone}</td>
                         <td class="px-4 py-2 whitespace-nowrap">${employee.ESalary}</td>
@@ -100,11 +104,16 @@
                 document.getElementById('modalOther').value = data[6];
                 // Change form action to update employee
                 document.getElementById('employeeModalForm').action = '/update_employee';
+                // Make Eid field non-editable
+                document.getElementById('modalEid').disabled = true;
+                // Set hidden Eid value
+                document.getElementById('hiddenEid').value = data[0];
             } catch (error) {
                 console.error('Error fetching employee data:', error);
                 alert('加载员工信息时出错，请稍后重试。');
             }
         }
+
 
         // Delete Employee
         async function deleteEmployee(Eid) {
@@ -154,7 +163,7 @@
                     row.innerHTML = `
                         <td class="px-4 py-2 whitespace-nowrap">${employee.Eid}</td>
                         <td class="px-4 py-2 whitespace-nowrap">${employee.EName}</td>
-                        <td class="px-4 py-2 whitespace-nowrap">${employee.EPas}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">********</td>
                         <td class="px-4 py-2 whitespace-nowrap">${employee.Elevel}</td>
                         <td class="px-4 py-2 whitespace-nowrap">${employee.EtelPhone}</td>
                         <td class="px-4 py-2 whitespace-nowrap">${employee.ESalary}</td>
@@ -187,19 +196,95 @@
             window.location.href = url;
         }
 
+        // Fetch user info and update display
+        document.addEventListener('DOMContentLoaded', function () {
+            // 检查是否有闪存消息
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        if ('{{ category }}' === 'error') {
+                            showToast('{{ message }}');
+                        }
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            // 获取用户信息
+            fetch('/get_user_info')
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        // 如果未登录，重定向到登录页面
+                        window.location.href = '/login';
+                    }
+                })
+                .then(data => {
+                    if (data.username) {
+                        document.getElementById('user-nickname').textContent = data.username;
+                        const userIcon = document.getElementById('user-icon');
+                        // 根据角色更新图标
+                        if (data.role === 'superadmin') {
+                            userIcon.className = 'fas fa-user-shield text-2xl';
+                        } else if (data.role === 'warehouse') {
+                            userIcon.className = 'fas fa-warehouse text-2xl';
+                        } else if (data.role === 'customer') {
+                            userIcon.className = 'fas fa-user-tie text-2xl';
+                        } else {
+                            userIcon.className = 'fas fa-user text-2xl';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching user info:', error);
+                    // 出错时重定向到登录页面
+                    window.location.href = '/login';
+                });
+
+            // 切换登出按钮的显示和隐藏
+            document.getElementById('user-info').addEventListener('click', function (event) {
+                event.stopPropagation(); // 阻止事件冒泡
+                const logoutButton = document.getElementById('logout-button');
+                logoutButton.classList.toggle('hidden');
+            });
+
+            // 点击页面其他地方时隐藏登出按钮
+            document.addEventListener('click', function(event) {
+                const userInfo = document.getElementById('user-info');
+                const logoutButton = document.getElementById('logout-button');
+                if (!userInfo.contains(event.target) && !logoutButton.contains(event.target)) {
+                    logoutButton.classList.add('hidden');
+                }
+            });
+        });
+
+        // 处理登出操作
+        function logout() {
+            if (confirm('您确定要登出吗？')) {
+                window.location.href = '/logout';
+            }
+        }
+
         // Load Employees on Page Load
         window.onload = loadEmployees;
     </script>
 </head>
 <body class="flex h-screen overflow-hidden">
     <!-- User Info Display -->
-    <div id="user-info" class="fixed top-4 right-4 flex items-center space-x-2 bg-white p-2 rounded-lg shadow-lg">
+    <div id="user-info" class="fixed top-4 right-4 z-20 flex items-center space-x-2 bg-white p-2 rounded-lg shadow-lg cursor-pointer">
         <i id="user-icon" class="fas fa-user text-2xl"></i>
         <span id="user-nickname" class="text-lg font-bold text-gray-700">User</span>
     </div>
 
+    <!-- Logout Button -->
+    <div id="logout-button" class="fixed top-16 right-4 z-20 bg-white p-2 rounded-lg shadow-lg hidden">
+        <button onclick="logout()" class="flex items-center text-red-600 font-semibold hover:text-red-800">
+            <i class="fas fa-sign-out-alt mr-2"></i>登出
+        </button>
+    </div>
+
     <!-- Toast 通知 -->
-    <div id="toast" class="fixed top-0 right-0 mt-4 mr-4 bg-red-500 text-white p-3 rounded-lg shadow-lg hidden">
+    <div id="toast" class="fixed top-0 right-0 mt-4 mr-4 z-10 bg-red-500 text-white p-3 rounded-lg shadow-lg hidden">
         <span id="toast-message"></span>
     </div>
 
@@ -326,10 +411,11 @@
                         </button>
                     </div>
                     <form id="employeeModalForm" action="/add_employee" method="post" class="mt-5">
+                        <input type="hidden" id="hiddenEid" name="Eid">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label for="modalEid" class="block text-sm font-medium text-gray-700">员工编号:</label>
-                                <input type="text" id="modalEid" name="Eid" required
+                                <input type="text" id="modalEid" required
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
                             <div>
@@ -339,7 +425,7 @@
                             </div>
                             <div>
                                 <label for="modalEPas" class="block text-sm font-medium text-gray-700">密码:</label>
-                                <input type="password" id="modalEPas" name="EPas" required
+                                <input type="text" id="modalEPas" name="EPas" required
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
                             <div>
