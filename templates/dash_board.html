@@ -34,17 +34,20 @@
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
-    <!-- User Info Display -->
-    <div id="user-info" class="fixed top-4 right-4 z-20 flex items-center space-x-2 bg-white p-2 rounded-lg shadow-lg cursor-pointer">
-        <i id="user-icon" class="fas fa-user text-2xl"></i>
-        <span id="user-nickname" class="text-lg font-bold text-gray-700">User</span>
-    </div>
+    <!-- User Info Display with Logout Button -->
+    <div id="user-info-container" class="fixed top-4 right-4 z-50 flex items-center space-x-4 bg-white p-2 rounded-lg shadow-lg cursor-pointer">
+        <!-- User Info -->
+        <div id="user-info" class="flex items-center space-x-2">
+            <i id="user-icon" class="fas fa-user text-2xl"></i>
+            <span id="user-nickname" class="text-lg font-bold text-gray-700">User</span>
+        </div>
 
-    <!-- Logout Button -->
-    <div id="logout-button" class="fixed top-16 right-4 z-20 bg-white p-2 rounded-lg shadow-lg hidden">
-        <button onclick="logout()" class="flex items-center text-red-600 font-semibold hover:text-red-800">
-            <i class="fas fa-sign-out-alt mr-2"></i>登出
-        </button>
+        <!-- Logout Button -->
+        <div id="logout-button">
+            <button onclick="logout()" class="flex items-center text-red-600 font-semibold hover:text-red-800">
+                <i class="fas fa-sign-out-alt mr-2"></i>登出
+            </button>
+        </div>
     </div>
 
     <!-- Toast 通知 -->
@@ -72,7 +75,7 @@
                         <i class="fas fa-box-open mr-2"></i>商品管理
                     </a>
                 </li>
-                <li class="mb-4" data-role="Warehouse">
+                <li class="mb-4" data-role="Admin,Warehouse">
                     <button onclick="toggleSubmenu()" class="w-full text-left flex items-center bg-red-400 text-black p-2 rounded-full justify-center">
                         <i class="fas fa-shopping-cart mr-2"></i>采购管理
                     </button>
@@ -89,7 +92,7 @@
                         </li>
                     </ul>
                 </li>
-                <li class="mb-4" data-role="Admin,Warehouse,Guest">
+                <li class="mb-4" data-role="Admin,Warehouse,CustomerManager,Guest">
                     <a href="/statistics" class="flex items-center bg-purple-400 text-black p-2 rounded-full justify-center">
                         <i class="fas fa-chart-bar mr-2"></i>统计查询
                     </a>
